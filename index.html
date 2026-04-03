@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v1.3</title>
+<title>建物名 地名マップ v1.4</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -337,7 +337,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v1.3</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v1.4</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="5000" min="100" max="20000" style="width:65px">
@@ -357,6 +357,8 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
     </div>
     <span class="sep">│</span>
     <button class="btn go" id="goBtn" onclick="fetchData()">🔍 取得</button>
+    <span class="sep">│</span>
+    <button class="btn" id="shareBtn" onclick="shareLink()" style="font-size:11px;padding:5px 12px;">🔗 共有リンク</button>
   </div>
 </header>
 
@@ -890,8 +892,88 @@ function setStatus(msg, loading=false) {
   document.getElementById('spinner').className = 's-spinner' + (loading ? ' on' : '');
 }
 
+// ===== 共有リンク =====
+function shareLink() {
+  if (keywords.length === 0) { setStatus('キーワドがないデス！'); return; }
+  if (centerLat === null)    { setStatus('中心点がないデス！'); return; }
+
+  const params = new URLSearchParams();
+  // キーワド（word:color のかたちでエンコード）
+  params.set('kw', keywords.map(k => `${k.word}:${k.color.replace('#','')}`).join(','));
+  params.set('lat', centerLat.toFixed(5));
+  params.set('lng', centerLng.toFixed(5));
+  params.set('r', document.getElementById('radius').value);
+  params.set('tile', currentTile);
+  params.set('src', dataSource);
+
+  const url = location.origin + location.pathname + '?' + params.toString();
+
+  // クリップボードにコピー
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('shareBtn');
+    btn.textContent = '✅ コピーしたヨ！';
+    btn.style.color = '#66dd88';
+    setTimeout(() => {
+      btn.textContent = '🔗 共有リンク';
+      btn.style.color = '';
+    }, 2500);
+  }).catch(() => {
+    // クリップボードつかえないばあいはプロンプトでみせル
+    prompt('このURLをコピーしてクダサイ：', url);
+  });
+}
+
+// ===== URLパラメタからじょうたいをふくげん =====
+function restoreFromURL() {
+  const params = new URLSearchParams(location.search);
+  if (!params.has('kw')) return false;
+
+  // キーワド復元
+  const kwStr = params.get('kw');
+  kwStr.split(',').forEach((part, i) => {
+    const [word, colorHex] = part.split(':');
+    if (!word) return;
+    const color = '#' + (colorHex || PALETTE[i % PALETTE.length].replace('#',''));
+    keywords.push({ id: 'kw_' + Date.now() + i, word, color, enabled: true });
+  });
+  renderChips();
+
+  // 中心点復元
+  const lat = parseFloat(params.get('lat'));
+  const lng = parseFloat(params.get('lng'));
+  if (!isNaN(lat) && !isNaN(lng)) {
+    centerLat = lat; centerLng = lng;
+    map.setView([lat, lng], 13);
+    // 中心ピン
+    if (centerPinVisible) {
+      if (centerMarker) map.removeLayer(centerMarker);
+      centerMarker = L.marker([lat, lng], { icon: centerIcon, zIndexOffset: 1000 })
+        .bindTooltip(`${lat.toFixed(4)}, ${lng.toFixed(4)}`)
+        .addTo(map);
+    }
+    document.getElementById('centerDisplay').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }
+
+  // 半径
+  if (params.has('r')) document.getElementById('radius').value = params.get('r');
+
+  // 地図タイル
+  if (params.has('tile')) {
+    const tile = params.get('tile');
+    document.getElementById('tileSelect').value = tile;
+    changeTile();
+  }
+
+  // データソース
+  if (params.has('src')) setSource(params.get('src'));
+
+  setStatus('共有リンクからじょうたいをふくげんしたヨ！「取得」でデータよみこめルヨ');
+  return true;
+}
+
 // ===== 起動時GPS取得 =====
-getGPS();
+const restoredFromURL = restoreFromURL();
+if (!restoredFromURL) getGPS();
 </script>
 </body>
 </html>

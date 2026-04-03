@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v1.6</title>
+<title>建物名 地名マップ v1.7</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -376,7 +376,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v1.6</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v1.7</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="5000" min="100" max="20000" style="width:65px">
@@ -447,6 +447,10 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   <label class="cb-label">
     <input type="checkbox" id="filterRoute" checked onchange="classifyAndRender()">
     <span>🗺 路線・ルートをのぞく</span>
+  </label>
+  <label class="cb-label">
+    <input type="checkbox" id="filterRoad" checked onchange="classifyAndRender()">
+    <span>🛣 道路をのぞく</span>
   </label>
   <span id="filterCount" style="font-size:10px;color:var(--muted);margin-left:8px;"></span>
 </div>
@@ -717,23 +721,39 @@ async function fetchData() {
   }
 }
 
-// ===== OSM fetch =====
+// ===== OSM fetch（キーワドごとに1個ずつ）=====
 async function fetchOSM(r) {
-  const pattern = keywords.map(k => k.word).join('|');
-  const query = `[out:json][timeout:60];
+  allBuildings = [];
+
+  for (let i = 0; i < keywords.length; i++) {
+    const kw = keywords[i];
+    document.getElementById('loadingSub').textContent =
+      `「${kw.word}」を検索中... (${i+1}/${keywords.length})`;
+
+    const query = `[out:json][timeout:60];
 (
-  node["name"~"${pattern}"](around:${r},${centerLat},${centerLng});
-  way["name"~"${pattern}"](around:${r},${centerLat},${centerLng});
-  relation["name"~"${pattern}"](around:${r},${centerLat},${centerLng});
+  node["name"~"${kw.word}"](around:${r},${centerLat},${centerLng});
+  way["name"~"${kw.word}"](around:${r},${centerLat},${centerLng});
+  relation["name"~"${kw.word}"](around:${r},${centerLat},${centerLng});
 );
 out center tags;`;
-  try {
-    const res = await fetch('https://overpass-api.de/api/interpreter', { method:'POST', body: query });
-    const data = await res.json();
-    processElements(data.elements, 'osm');
-  } catch(e) {
-    setStatus('OSMエラ：' + e.message);
+
+    try {
+      const res = await fetch('https://overpass-api.de/api/interpreter', { method:'POST', body: query });
+      if (!res.ok) {
+        setStatus(`「${kw.word}」タイムアウト、スキップしたヨ`);
+        continue;
+      }
+      const data = await res.json();
+      appendElements(data.elements);
+    } catch(e) {
+      setStatus(`「${kw.word}」エラ：${e.message}、スキップしたヨ`);
+      continue;
+    }
   }
+
+  classifyAndRender();
+  setStatus(`${allBuildings.length}件みつかたヨ！（${keywords.length}キーワド検索済み）`);
 }
 
 // ===== Google Places fetch =====
@@ -804,8 +824,8 @@ async function fetchGoogle(r) {
   setStatus(`Google Places：${allBuildings.length}件みつかたヨ！`);
 }
 
-function processElements(elements, source) {
-  allBuildings = [];
+// 追記型（キーワドごとによびだすのでallBuildingsにたしていく）
+function appendElements(elements) {
   for (const el of elements) {
     const name = el.tags?.name || '';
     if (!name) continue;
@@ -816,19 +836,27 @@ function processElements(elements, source) {
     const matched = keywords.filter(kw => name.includes(kw.word));
     if (matched.length === 0) continue;
 
-    // 交通機関タグを保存
+    // かさなりチェック（おなじidはいれない）
+    if (allBuildings.find(b => b.id === el.id)) continue;
+
     const tags = el.tags || {};
     const isBusStop = tags.highway === 'bus_stop' || tags.public_transport === 'stop_point' || tags.public_transport === 'stop_area';
     const isStation = tags.railway === 'station' || tags.railway === 'platform' || tags.railway === 'halt' || tags.public_transport === 'station';
     const isRoute   = tags.route != null || tags.type === 'route' || tags.type === 'route_master';
+    const isRoad    = tags.highway != null && tags.highway !== 'bus_stop';
 
     allBuildings.push({
       id: el.id, name, lat, lng, matched,
       type: tags.amenity || tags.shop || tags.building ||
             tags.leisure || tags.office || tags.tourism || tags.railway || tags.highway || '',
-      isBusStop, isStation, isRoute,
+      isBusStop, isStation, isRoute, isRoad,
     });
   }
+}
+
+function processElements(elements, source) {
+  allBuildings = [];
+  appendElements(elements);
   classifyAndRender();
   setStatus(`${allBuildings.length}件みつかたヨ！`);
 }
@@ -838,6 +866,7 @@ function isFiltered(b) {
   if (document.getElementById('filterBusStop').checked && b.isBusStop) return true;
   if (document.getElementById('filterStation').checked && b.isStation) return true;
   if (document.getElementById('filterRoute').checked && b.isRoute)   return true;
+  if (document.getElementById('filterRoad').checked && b.isRoad)     return true;
   return false;
 }
 

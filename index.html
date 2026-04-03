@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.2</title>
+<title>建物名 地名マップ v2.3</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -120,23 +120,38 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 .chips-area { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1; }
 .chip {
   display: flex; align-items: center; gap: 5px;
-  padding: 3px 8px 3px 10px;
+  padding: 3px 8px 3px 8px;
   border-radius: 20px;
   font-size: 12px; font-weight: 700;
   cursor: pointer;
   border: 2px solid transparent;
   user-select: none;
-  transition: opacity 0.2s, transform 0.1s;
+  transition: opacity 0.2s, transform 0.1s, filter 0.2s;
 }
 .chip:hover { transform: scale(1.05); }
-.chip.off { opacity: 0.28; }
+.chip.off { opacity: 0.35; filter: grayscale(60%); }
+.chip-eye { font-size: 11px; margin-right: 1px; }
 .chip-del { font-size: 10px; opacity: 0.55; margin-left: 2px; cursor: pointer; }
 .chip-del:hover { opacity: 1; }
 .add-kw-group { display: flex; gap: 6px; align-items: center; }
-.color-swatch {
-  width: 22px; height: 22px; border-radius: 50%;
-  border: 2px solid var(--border); cursor: pointer; flex-shrink: 0;
+
+/* カラーパレット */
+.palette-area { display: flex; gap: 4px; align-items: center; }
+.palette-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  cursor: pointer; border: 2px solid transparent;
+  transition: transform 0.1s, border-color 0.1s;
+  flex-shrink: 0;
 }
+.palette-dot:hover { transform: scale(1.2); }
+.palette-dot.selected { border-color: white; transform: scale(1.2); }
+.palette-custom {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+  cursor: pointer; border: 2px solid var(--border);
+  transition: transform 0.1s; flex-shrink: 0; font-size: 0;
+}
+.palette-custom:hover { transform: scale(1.2); }
 
 .filter-bar {
   padding: 6px 16px;
@@ -376,7 +391,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.2</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.3</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -444,13 +459,14 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
     <span style="font-size:11px;color:var(--muted)">↓ キーワードを追加してネ</span>
   </div>
   <div class="add-kw-group">
-    <input type="text" id="kwInput" placeholder="地名入力…" style="width:100px"
+    <input type="text" id="kwInput" placeholder="地名入力…" style="width:90px"
       autocomplete="off"
       onkeydown="if(event.key==='Enter')addKeyword()">
-    <div class="color-swatch" id="colorSwatch" onclick="document.getElementById('colorPicker').click()"></div>
+    <div class="palette-area" id="paletteArea"></div>
+    <div class="palette-custom" id="paletteCustom" title="カスタムカラー" onclick="document.getElementById('colorPicker').click()"></div>
     <input type="color" id="colorPicker" value="#e8003d"
       style="width:0;height:0;opacity:0;position:absolute"
-      oninput="document.getElementById('colorSwatch').style.background=this.value">
+      oninput="onCustomColor(this.value)">
     <button class="btn" onclick="addKeyword()">＋</button>
   </div>
 </div>
@@ -492,15 +508,11 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <script>
 const PALETTE = ['#e8003d','#0057e7','#00b86b','#f5a623','#cc44ff','#00ccdd','#ff6600','#cc0099'];
-let paletteIdx = 0;
 let keywords = [];
 let allBuildings = [];
 let markerRefs = {};
 let centerLat = null, centerLng = null;
 let centerMarker = null;
-
-document.getElementById('colorSwatch').style.background = PALETTE[0];
-document.getElementById('colorPicker').value = PALETTE[0];
 
 // ===== MAP =====
 const map = L.map('map', { zoomControl: true }).setView([35.6702, 139.7027], 13);
@@ -615,16 +627,41 @@ async function searchAddress() {
   }
 }
 
+// ===== PALETTE UI =====
+let selectedColor = PALETTE[0];
+
+function initPalette() {
+  const area = document.getElementById('paletteArea');
+  area.innerHTML = PALETTE.map((c, i) => `
+    <div class="palette-dot ${i===0?'selected':''}"
+      style="background:${c}" data-color="${c}"
+      onclick="selectPaletteColor('${c}', this)" title="${c}"></div>
+  `).join('');
+}
+function selectPaletteColor(color, el) {
+  selectedColor = color;
+  document.querySelectorAll('.palette-dot').forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('paletteCustom').style.border = '2px solid var(--border)';
+}
+function onCustomColor(color) {
+  selectedColor = color;
+  document.querySelectorAll('.palette-dot').forEach(d => d.classList.remove('selected'));
+  document.getElementById('paletteCustom').style.border = `2px solid ${color}`;
+}
+initPalette();
+
 // ===== KEYWORD =====
 function addKeyword() {
   const word = document.getElementById('kwInput').value.trim();
   if (!word) return;
   if (keywords.find(k => k.word === word)) { document.getElementById('kwInput').value = ''; return; }
-  const color = document.getElementById('colorPicker').value;
-  keywords.push({ id: 'kw_' + Date.now(), word, color, enabled: true });
-  paletteIdx = (paletteIdx + 1) % PALETTE.length;
-  document.getElementById('colorPicker').value = PALETTE[paletteIdx];
-  document.getElementById('colorSwatch').style.background = PALETTE[paletteIdx];
+  keywords.push({ id: 'kw_' + Date.now(), word, color: selectedColor, enabled: true });
+  // つぎの色をじどうでえらぶ
+  const idx = PALETTE.indexOf(selectedColor);
+  const nextIdx = (idx + 1) % PALETTE.length;
+  const nextDot = document.querySelectorAll('.palette-dot')[nextIdx];
+  if (nextDot) selectPaletteColor(PALETTE[nextIdx], nextDot);
   document.getElementById('kwInput').value = '';
   renderChips();
 }
@@ -644,9 +681,9 @@ function renderChips() {
   }
   area.innerHTML = keywords.map(kw => `
     <div class="chip ${kw.enabled ? '' : 'off'}"
-      style="background:${kw.color}1a;color:${kw.color};border-color:${kw.color}66"
+      style="background:${kw.color}1a;color:${kw.color};border-color:${kw.color}${kw.enabled?'99':'33'}"
       onclick="toggleKw('${kw.id}')">
-      <div style="width:7px;height:7px;border-radius:50%;background:${kw.color};flex-shrink:0"></div>
+      <span class="chip-eye">${kw.enabled ? '👀' : '🙈'}</span>
       ${kw.word}
       <span class="chip-del" onclick="event.stopPropagation();removeKw('${kw.id}')">✕</span>
     </div>

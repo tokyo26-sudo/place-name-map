@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.3</title>
+<title>建物名 地名マップ v2.4.1</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -357,7 +357,10 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   z-index: 500;
   pointer-events: none;
   white-space: nowrap;
+  opacity: 1;
+  transition: opacity 0.8s ease;
 }
+.map-hint.hidden { opacity: 0; }
 </style>
 </head>
 <body>
@@ -391,7 +394,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.3</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.4.1</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -402,6 +405,10 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
       <option value="osm">🗺 カラー地図</option>
       <option value="white">⬜ 白地図</option>
       <option value="dark">🌑 ダーク</option>
+      <option value="gsi">🗾 地理院地図</option>
+      <option value="gsipale">🗾 地理院淡色</option>
+      <option value="gsirelief">🏔 地理院陰影</option>
+      <option value="gsiphoto">📸 地理院航空写真</option>
     </select>
     <span class="sep">│</span>
     <label>データ：</label>
@@ -518,9 +525,13 @@ let centerMarker = null;
 const map = L.map('map', { zoomControl: true }).setView([35.6702, 139.7027], 13);
 
 const TILES = {
-  osm:   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CartoDB', maxZoom: 19 }),
-  white: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CartoDB', maxZoom: 19 }),
-  dark:  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CartoDB', maxZoom: 19 }),
+  osm:    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CartoDB', maxZoom: 19 }),
+  white:  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CartoDB', maxZoom: 19 }),
+  dark:   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CartoDB', maxZoom: 19 }),
+  gsi:    L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: '© 国土地理院', maxZoom: 18 }),
+  gsipale:L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', { attribution: '© 国土地理院', maxZoom: 18 }),
+  gsirelief: L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/relief/{z}/{x}/{y}.png', { attribution: '© 国土地理院', maxZoom: 15 }),
+  gsiphoto: L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', { attribution: '© 国土地理院', maxZoom: 18 }),
 };
 TILES.osm.addTo(map);
 let currentTile = 'osm';
@@ -582,10 +593,22 @@ function setCenter(lat, lng, label) {
     : `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 }
 
+// ===== ヒントのフェードアウト =====
+let hintTimer = null;
+function showHint() {
+  const hint = document.querySelector('.map-hint');
+  hint.classList.remove('hidden');
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => hint.classList.add('hidden'), 3000);
+}
+// 起動3秒後にフェードアウト
+setTimeout(() => showHint(), 100);
+
 // 地図クリックで中心移動
 map.on('click', e => {
   setCenter(e.latlng.lat, e.latlng.lng, null);
   setStatus('中心点うごかしタ！「取得」で検索できルヨ');
+  showHint();
 });
 
 // ===== GPS =====

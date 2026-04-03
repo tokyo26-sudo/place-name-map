@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v1.4</title>
+<title>建物名 地名マップ v1.5</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -162,6 +162,38 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 .main { display: flex; flex: 1; overflow: hidden; position: relative; }
 #map { flex: 1; cursor: crosshair; }
+
+/* アプリ内ブラウザ警告バナー */
+#inAppBanner {
+  display: none;
+  background: #2a1500;
+  border-bottom: 1px solid #aa5500;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #ffaa44;
+  text-align: center;
+  flex-shrink: 0;
+}
+#inAppBanner.on { display: block; }
+
+/* スマホ対応 */
+@media (max-width: 640px) {
+  header { padding: 6px 10px; gap: 8px; }
+  h1 { font-size: 18px; }
+  .area-settings { gap: 6px; }
+  .main { flex-direction: column; }
+  #map { flex: none; height: 55vw; min-height: 220px; }
+  .sidebar {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    max-height: 40vh;
+  }
+  .search-bar { padding: 6px 10px; gap: 6px; }
+  .keyword-bar { padding: 6px 10px; }
+  .filter-bar { padding: 5px 10px; gap: 8px; }
+  .map-hint { font-size: 10px; padding: 4px 10px; bottom: 8px; }
+}
 
 /* ローディングオーバーレイ */
 #loadingOverlay {
@@ -335,9 +367,14 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   </div>
 </div>
 
+<!-- アプリ内ブラウザ警告 -->
+<div id="inAppBanner">
+  ⚠️ このブラウザでは地図データが取得できないことがあります。SafariまたはChromeでひらいてクダサイ！
+</div>
+
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v1.4</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v1.5</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="5000" min="100" max="20000" style="width:65px">
@@ -429,7 +466,10 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   <div class="sidebar">
     <div class="sidebar-head">
       <h2>建物リスト</h2>
-      <div class="total-badge">計 <span id="totalCount">0</span> 件</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="total-badge">計 <span id="totalCount">0</span> 件</div>
+        <button class="btn" onclick="clearAll()" style="font-size:10px;padding:3px 8px;color:#ff6666;border-color:#442222;">🗑 全クリア</button>
+      </div>
     </div>
     <div class="list-area" id="listArea">
       <div class="empty">
@@ -967,8 +1007,39 @@ function restoreFromURL() {
   // データソース
   if (params.has('src')) setSource(params.get('src'));
 
-  setStatus('共有リンクからじょうたいをふくげんしたヨ！「取得」でデータよみこめルヨ');
+  setStatus('共有リンクからじょうたいをふくげんしたヨ！データよみこみちゅう...');
+  // じどうで取得する
+  setTimeout(() => fetchData(), 500);
   return true;
+}
+
+// ===== アプリ内ブラウザけんち =====
+function detectInAppBrowser() {
+  const ua = navigator.userAgent;
+  const isInApp = /FBAN|FBAV|Instagram|Line|Twitter|Snapchat|WeChat|MicroMessenger/.test(ua)
+    || (ua.includes('iPhone') && !ua.includes('Safari'));
+  if (isInApp) {
+    document.getElementById('inAppBanner').classList.add('on');
+  }
+}
+detectInAppBrowser();
+
+// ===== 全クリア =====
+function clearAll() {
+  if (!confirm('検索結果とキーワードをすべて消しますか？')) return;
+  // キーワドクリア
+  keywords = [];
+  renderChips();
+  // 建物クリア
+  allBuildings = [];
+  markerLayer.clearLayers();
+  markerRefs = {};
+  // リストクリア
+  document.getElementById('listArea').innerHTML =
+    `<div class="empty"><div class="empty-icon">📍</div><div>地名を追加して<br>「取得」ボタンをおして！</div></div>`;
+  document.getElementById('totalCount').textContent = '0';
+  document.getElementById('filterCount').textContent = '';
+  setStatus('クリアしたヨ！');
 }
 
 // ===== 起動時GPS取得 =====

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.5.3</title>
+<title>建物名 地名マップ v2.6</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -394,7 +394,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.5.3</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.6</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -439,6 +439,9 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   <button class="btn" onclick="searchAddress()">検索</button>
   <span class="sep">│</span>
   <button class="btn" id="centerPinBtn" onclick="toggleCenterPin()" style="font-size:11px;padding:4px 10px;">📌 中心ピン ON</button>
+  <span class="sep">│</span>
+  <button class="btn" id="areaBtn" onclick="fetchAreaData()" style="background:#0a2a10;border-color:#2a6a3a;color:#66dd88;font-weight:700;padding:5px 14px;">📥 エリアデータ取得</button>
+  <span id="areaStatus" style="font-size:11px;color:var(--muted);"></span>
   <div class="center-info">
     中心：<span id="centerDisplay">取得中...</span>
     <span style="color:var(--muted);font-size:10px;">／ 地図クリックで移動</span>
@@ -472,7 +475,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   <div class="chips-area" id="chipsArea">
     <span style="font-size:11px;color:var(--muted)">↓ キーワードを追加してネ</span>
   </div>
-  <button class="btn go" id="goBtnMain" onclick="fetchData()" style="padding:5px 18px;font-size:13px;flex-shrink:0;">🔍 取得</button>
+  <button class="btn go" id="goBtnMain" onclick="filterAndShow()" style="padding:5px 18px;font-size:13px;flex-shrink:0;">🔍 検索</button>
   <span style="color:var(--border);margin:0 4px;">│</span>
   <div class="add-kw-group">
     <input type="text" id="kwInput" placeholder="地名入力…" style="width:90px"
@@ -780,30 +783,105 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ===== FETCH =====
-async function fetchData() {
+// ===== エリアデータ取得（Overpassによびかけるのはここだけ）=====
+let areaCache = []; // とってきたぜんけんをほぞん
+let areaCacheInfo = null; // どのエリアをとったか
+
+async function fetchAreaData() {
   if (centerLat === null) { setStatus('先に中心点をきめてクダサイ！'); return; }
-  if (keywords.length === 0) { setStatus('地名キーワードを１個いれてクダサイ！'); return; }
 
   const r = parseInt(document.getElementById('radius').value) || 2000;
 
-  // 警告チェック
-  if (keywords.length >= 3 && r >= 3000) {
-    const ok = confirm(`キーワドが${keywords.length}個で半径${(r/1000).toFixed(1)}kmはおもくなルカモしれないデスヨ！\nタイムアウトする可能性があります。\n半径を2000m以下にすることをおすすめしマス。\n\nこのまま続けますか？`);
-    if (!ok) return;
+  showLoading(true, `エリアデータ取得中... 半径${(r/1000).toFixed(1)}km`);
+  document.getElementById('areaBtn').disabled = true;
+
+  const query = `[out:json][timeout:60];
+(
+  node["name"](around:${r},${centerLat},${centerLng});
+  way["name"](around:${r},${centerLat},${centerLng});
+  relation["name"](around:${r},${centerLat},${centerLng});
+);
+out center tags;`;
+
+  const endpoints = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+  ];
+
+  for (const endpoint of endpoints) {
+    const label = endpoint.includes('kumi') ? 'サバ2' : 'サバ1';
+    try {
+      document.getElementById('loadingSub').textContent = `${label} からエリアデータよびだし中...`;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 35000);
+      const res = await fetch(endpoint, { method:'POST', body: query, signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) { continue; }
+      const data = await res.json();
+
+      // ぜんけんをキャッシュ
+      areaCache = data.elements.filter(el => el.tags?.name).map(el => {
+        let lat, lng;
+        if (el.type === 'node') { lat = el.lat; lng = el.lon; }
+        else if (el.center) { lat = el.center.lat; lng = el.center.lon; }
+        else return null;
+        const tags = el.tags || {};
+        return {
+          uid: `${el.type}_${el.id}`,
+          id: el.id, name: tags.name, lat, lng,
+          type: tags.amenity || tags.shop || tags.building ||
+                tags.leisure || tags.office || tags.tourism || tags.railway || tags.highway || '',
+          isBusStop: tags.highway === 'bus_stop' || tags.public_transport === 'stop_point' || tags.public_transport === 'stop_area',
+          isStation: tags.railway === 'station' || tags.railway === 'platform' || tags.railway === 'halt' || tags.public_transport === 'station',
+          isRoute: tags.route != null || tags.type === 'route' || tags.type === 'route_master',
+          isRoad: tags.highway != null && tags.highway !== 'bus_stop',
+        };
+      }).filter(Boolean);
+
+      areaCacheInfo = { lat: centerLat, lng: centerLng, r };
+      const msg = `📦 ${areaCache.length}件のデータをほぞんしたヨ！キーワドをいれて🔍検索をおしてクダサイ`;
+      document.getElementById('areaStatus').textContent = msg;
+      setStatus(msg);
+      showLoading(false);
+      document.getElementById('areaBtn').disabled = false;
+      return;
+    } catch(e) {
+      continue;
+    }
+  }
+  setStatus('エリアデータ取得しっぱい。しばらくまってからためしてクダサイ。');
+  showLoading(false);
+  document.getElementById('areaBtn').disabled = false;
+}
+
+// ===== キーワドでフィルタ（Overpassによびかけない）=====
+function filterAndShow() {
+  if (areaCache.length === 0) {
+    setStatus('先に「📥 エリアデータ取得」をおしてクダサイ！');
+    return;
+  }
+  if (keywords.length === 0) {
+    setStatus('地名キーワードを１個いれてクダサイ！');
+    return;
   }
 
-  showLoading(true, `${dataSource === 'google' ? 'Google Places' : 'Overpass API'} から取得中... 半径${(r/1000).toFixed(1)}km`);
-  document.getElementById('goBtnMain').disabled = true;
+  // キーワドにマッチするものだけしぼる
+  allBuildings = areaCache.filter(b => {
+    b.matched = keywords.filter(kw => b.name.includes(kw.word));
+    return b.matched.length > 0;
+  });
 
-  try {
-    if (dataSource === 'google') {
-      await fetchGoogle(r);
-    } else {
-      await fetchOSM(r);
-    }
-  } finally {
-    showLoading(false);
-    document.getElementById('goBtnMain').disabled = false;
+  classifyAndRender();
+  setStatus(`${allBuildings.length}件ヒットしたヨ！（${areaCache.length}件中）`);
+}
+
+// 後方互換のためfetchDataはfilterAndShowにリダイレクト
+async function fetchData() {
+  if (areaCache.length === 0) {
+    await fetchAreaData();
+    if (areaCache.length > 0 && keywords.length > 0) filterAndShow();
+  } else {
+    filterAndShow();
   }
 }
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.6.2</title>
+<title>建物名 地名マップ v2.6.3</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -394,7 +394,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.6.2</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.6.3</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -441,6 +441,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   <button class="btn" id="centerPinBtn" onclick="toggleCenterPin()" style="font-size:11px;padding:4px 10px;">📌 中心ピン ON</button>
   <span class="sep">│</span>
   <button class="btn" id="areaBtn" onclick="fetchAreaData()" style="background:#0a2a10;border-color:#2a6a3a;color:#66dd88;font-weight:700;padding:5px 14px;">📥 エリアデータ取得</button>
+  <button class="btn" id="areaFlyBtn" onclick="flyToAreaCenter()" style="font-size:11px;padding:4px 10px;display:none;">📦 取得エリアへ</button>
   <span id="areaStatus" style="font-size:11px;color:var(--muted);"></span>
   <div class="center-info">
     中心：<span id="centerDisplay">取得中...</span>
@@ -850,6 +851,7 @@ out center tags;`;
       }).filter(Boolean);
 
       areaCacheInfo = { lat: centerLat, lng: centerLng, r };
+      document.getElementById('areaFlyBtn').style.display = 'inline';
       const msg = `📦 ${areaCache.length}件のデータをほぞんしたヨ！キーワドをいれて🔍検索をおしてクダサイ`;
       document.getElementById('areaStatus').textContent = msg;
       setStatus(msg);
@@ -863,6 +865,11 @@ out center tags;`;
   setStatus('エリアデータ取得しっぱい。しばらくまってからためしてクダサイ。');
   showLoading(false);
   document.getElementById('areaBtn').disabled = false;
+}
+
+function flyToAreaCenter() {
+  if (!areaCacheInfo) return;
+  map.flyTo([areaCacheInfo.lat, areaCacheInfo.lng], 13, { duration: 0.8 });
 }
 
 // ===== キーワドでフィルタ（Overpassによびかけない）=====

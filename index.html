@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.6</title>
+<title>建物名 地名マップ v2.6.1</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -394,7 +394,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.6</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.6.1</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -795,11 +795,14 @@ async function fetchAreaData() {
   showLoading(true, `エリアデータ取得中... 半径${(r/1000).toFixed(1)}km`);
   document.getElementById('areaBtn').disabled = true;
 
-  const query = `[out:json][timeout:60];
+  const query = `[out:json][timeout:60][maxsize:33554432];
 (
-  node["name"](around:${r},${centerLat},${centerLng});
-  way["name"](around:${r},${centerLat},${centerLng});
-  relation["name"](around:${r},${centerLat},${centerLng});
+  node["name"]["name"!~"^\\s*$"](around:${r},${centerLat},${centerLng});
+  way["name"]["building"](around:${r},${centerLat},${centerLng});
+  way["name"]["amenity"](around:${r},${centerLat},${centerLng});
+  way["name"]["shop"](around:${r},${centerLat},${centerLng});
+  way["name"]["office"](around:${r},${centerLat},${centerLng});
+  way["name"]["leisure"](around:${r},${centerLat},${centerLng});
 );
 out center tags;`;
 

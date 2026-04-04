@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.5.2</title>
+<title>建物名 地名マップ v2.5.3</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -394,7 +394,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.5.2</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.5.3</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -819,18 +819,23 @@ async function fetchOSM(r) {
 );
 out center tags;`;
 
-  // エンドポイントを2つ用意してフォールバック
   const endpoints = [
     'https://overpass-api.de/api/interpreter',
     'https://overpass.kumi.systems/api/interpreter',
   ];
 
   for (const endpoint of endpoints) {
+    const label = endpoint.includes('kumi') ? 'サバ2' : 'サバ1';
     try {
-      setStatus(`データ取得中... (${endpoint.includes('kumi') ? 'サバ2' : 'サバ1'})`, true);
-      const res = await fetch(endpoint, { method:'POST', body: query });
-      if (!res.ok) { 
-        setStatus(`${res.status}エラ、つぎのサバためすヨ...`);
+      setStatus(`データ取得中... (${label})`, true);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 35000); // 35秒でタイムアウト
+      const res = await fetch(endpoint, {
+        method: 'POST', body: query, signal: controller.signal
+      });
+      clearTimeout(timer);
+      if (!res.ok) {
+        setStatus(`${label} ${res.status}エラ、つぎのサバためすヨ...`);
         continue;
       }
       const data = await res.json();
@@ -839,11 +844,12 @@ out center tags;`;
       setStatus(`${allBuildings.length}件みつかたヨ！`);
       return;
     } catch(e) {
-      setStatus(`エラ：${e.message}、つぎのサバためすヨ...`);
+      const msg = e.name === 'AbortError' ? 'タイムアウト' : e.message;
+      setStatus(`${label} エラ：${msg}、つぎのサバためすヨ...`);
       continue;
     }
   }
-  setStatus('すべてのサバがタイムアウトしたヨ。しばらくまってからためしてクダサイ。');
+  setStatus('すべてのサバがつかえなかたヨ。しばらくまってためしてクダサイ。');
 }
 
 // ===== Google Places fetch =====

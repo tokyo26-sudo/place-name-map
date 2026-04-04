@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.4.1</title>
+<title>建物名 地名マップ v2.5</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -394,7 +394,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.4.1</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.5</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -409,6 +409,15 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
       <option value="gsipale">🗾 地理院淡色</option>
       <option value="gsirelief">🏔 地理院陰影</option>
       <option value="gsiphoto">📸 地理院航空写真</option>
+      <optgroup label="── 今昔マップ（首都圏）──">
+        <option value="kjmap_2man">📜 今昔 1896-1909年</option>
+        <option value="kjmap_00">📜 今昔 1917-1924年</option>
+        <option value="kjmap_01">📜 今昔 1927-1939年</option>
+        <option value="kjmap_02">📜 今昔 1944-1954年</option>
+        <option value="kjmap_03">📜 今昔 1965-1968年</option>
+        <option value="kjmap_04">📜 今昔 1975-1978年</option>
+        <option value="kjmap_05">📜 今昔 1986-1989年</option>
+      </optgroup>
     </select>
     <span class="sep">│</span>
     <label>データ：</label>
@@ -525,13 +534,21 @@ let centerMarker = null;
 const map = L.map('map', { zoomControl: true }).setView([35.6702, 139.7027], 13);
 
 const TILES = {
-  osm:    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CartoDB', maxZoom: 19 }),
-  white:  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CartoDB', maxZoom: 19 }),
-  dark:   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CartoDB', maxZoom: 19 }),
-  gsi:    L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: '© 国土地理院', maxZoom: 18 }),
-  gsipale:L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', { attribution: '© 国土地理院', maxZoom: 18 }),
-  gsirelief: L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/relief/{z}/{x}/{y}.png', { attribution: '© 国土地理院', maxZoom: 15 }),
+  osm:      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CartoDB', maxZoom: 19 }),
+  white:    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CartoDB', maxZoom: 19 }),
+  dark:     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CartoDB', maxZoom: 19 }),
+  gsi:      L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: '© 国土地理院', maxZoom: 18 }),
+  gsipale:  L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', { attribution: '© 国土地理院', maxZoom: 18 }),
+  gsirelief:L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/relief/{z}/{x}/{y}.png', { attribution: '© 国土地理院', maxZoom: 15 }),
   gsiphoto: L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', { attribution: '© 国土地理院', maxZoom: 18 }),
+  // 今昔マップ（首都圏版）※ {-y} でY軸反転
+  kjmap_2man: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/2man/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  kjmap_00:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/00/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  kjmap_01:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/01/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  kjmap_02:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/02/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  kjmap_03:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/03/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  kjmap_04:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/04/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  kjmap_05:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/05/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
 };
 TILES.osm.addTo(map);
 let currentTile = 'osm';

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.6.6</title>
+<title>建物名 地名マップ v2.6.8</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -394,7 +394,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.6.6</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.6.8</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -476,14 +476,12 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
     <span>🛣 道路をのぞく</span>
   </label>
   <span id="filterCount" style="font-size:10px;color:var(--muted);margin-left:8px;"></span>
-  <span class="sep" style="margin-left:4px;">│</span>
-  <div id="opacityGroup" style="display:none;align-items:center;gap:6px;">
-    <label style="font-size:11px;color:var(--muted);">🗺 重ね透過：</label>
-    <input type="range" id="overlayOpacity" min="0" max="100" value="60"
-      oninput="updateOverlayOpacity()"
-      style="width:80px;accent-color:#6688ff;cursor:pointer;">
-    <span id="opacityVal" style="font-size:12px;font-weight:700;color:#88aaff;min-width:32px;">60%</span>
-  </div>
+  <span class="sep" id="opacitySep" style="margin-left:4px;display:none;">│</span>
+  <label id="opacityLabel" style="font-size:11px;color:var(--muted);display:none;">🗺 重ね透過：</label>
+  <input type="range" id="overlayOpacity" min="0" max="100" value="60"
+    oninput="updateOverlayOpacity()"
+    style="width:80px;accent-color:#6688ff;cursor:pointer;display:none;">
+  <span id="opacityVal" style="font-size:12px;font-weight:700;color:#88aaff;min-width:32px;display:none;">60%</span>
 </div>
 
 <div class="keyword-bar">
@@ -491,7 +489,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   <div class="chips-area" id="chipsArea">
     <span style="font-size:11px;color:var(--muted)">↓ キーワードを追加してネ</span>
   </div>
-  <button class="btn go" onclick="fetchData()" style="padding:5px 18px;font-size:13px;flex-shrink:0;">🔍 取得</button>
+  <button class="btn go" id="goBtnMain" onclick="fetchData()" style="padding:5px 18px;font-size:13px;flex-shrink:0;">🔍 取得</button>
   <span style="color:var(--border);margin:0 4px;">│</span>
   <div class="add-kw-group">
     <input type="text" id="kwInput" placeholder="地名入力…" style="width:90px"
@@ -589,16 +587,20 @@ function changeTile() {
   currentTile = val;
 }
 
+function showOpacitySlider(show) {
+  ['opacitySep','opacityLabel','overlayOpacity','opacityVal'].forEach(id => {
+    document.getElementById(id).style.display = show ? (id === 'overlayOpacity' ? 'block' : 'inline') : 'none';
+  });
+}
+
 function changeOverlay() {
   const val = document.getElementById('overlaySelect').value;
-  const grp = document.getElementById('opacityGroup');
   if (overlayLayer) { map.removeLayer(overlayLayer); overlayLayer = null; }
-  if (val === 'none') { grp.style.display = 'none'; return; }
+  if (val === 'none') { showOpacitySlider(false); return; }
 
   const def = OVERLAY_DEFS[val];
   if (!def) return;
   const opacity = parseInt(document.getElementById('overlayOpacity').value) / 100;
-  // 毎回あたらしいレイヤをつくる（opacityがほかのレイヤにひびかないように）
   overlayLayer = L.tileLayer(def.url, {
     attribution: def.attr,
     maxZoom: def.max, minZoom: def.min,
@@ -606,8 +608,8 @@ function changeOverlay() {
   });
   overlayLayer.addTo(map);
   overlayLayer.bringToFront();
-  markerLayer.bringToFront();
-  grp.style.display = 'flex';
+  if (typeof markerLayer !== 'undefined') markerLayer.bringToFront();
+  showOpacitySlider(true);
 }
 
 function updateOverlayOpacity() {
@@ -845,7 +847,7 @@ async function fetchData() {
   }
 
   showLoading(true, `${dataSource === 'google' ? 'Google Places' : 'Overpass API'} から取得中... 半径${(r/1000).toFixed(1)}km`);
-  document.querySelectorAll('#goBtn').forEach(b => b.disabled = true);
+  document.querySelectorAll('#goBtn, #goBtnMain').forEach(b => b.disabled = true);
 
   try {
     if (dataSource === 'google') {
@@ -855,7 +857,7 @@ async function fetchData() {
     }
   } finally {
     showLoading(false);
-    document.querySelectorAll('#goBtn').forEach(b => b.disabled = false);
+    document.querySelectorAll('#goBtn, #goBtnMain').forEach(b => b.disabled = false);
   }
 }
 

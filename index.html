@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.6.8</title>
+<title>建物名 地名マップ v2.5</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -394,7 +394,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.6.8</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.5</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -409,23 +409,14 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
       <option value="gsipale">🗾 地理院淡色</option>
       <option value="gsirelief">🏔 地理院陰影</option>
       <option value="gsiphoto">📸 地理院航空写真</option>
-    </select>
-    <label>重ねる：</label>
-    <select id="overlaySelect" onchange="changeOverlay()" style="background:#1a1a2a;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:12px;padding:4px 8px;outline:none;cursor:pointer;">
-      <option value="none">なし</option>
       <optgroup label="── 今昔マップ（首都圏）──">
-        <option value="kjmap_2man">📜 1896-1909年</option>
-        <option value="kjmap_00">📜 1917-1924年</option>
-        <option value="kjmap_01">📜 1927-1939年</option>
-        <option value="kjmap_02">📜 1944-1954年</option>
-        <option value="kjmap_03">📜 1965-1968年</option>
-        <option value="kjmap_04">📜 1975-1978年</option>
-        <option value="kjmap_05">📜 1986-1989年</option>
-      </optgroup>
-      <optgroup label="── 地理院地図 ──">
-        <option value="gsi">🗾 地理院地図</option>
-        <option value="gsipale">🗾 地理院淡色</option>
-        <option value="gsiphoto">📸 地理院航空写真</option>
+        <option value="kjmap_2man">📜 今昔 1896-1909年</option>
+        <option value="kjmap_00">📜 今昔 1917-1924年</option>
+        <option value="kjmap_01">📜 今昔 1927-1939年</option>
+        <option value="kjmap_02">📜 今昔 1944-1954年</option>
+        <option value="kjmap_03">📜 今昔 1965-1968年</option>
+        <option value="kjmap_04">📜 今昔 1975-1978年</option>
+        <option value="kjmap_05">📜 今昔 1986-1989年</option>
       </optgroup>
     </select>
     <span class="sep">│</span>
@@ -434,8 +425,6 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
       <button class="src-btn active" id="srcOsm" onclick="setSource('osm')">OSM</button>
       <button class="src-btn" id="srcGoogle" onclick="setSource('google')">Google Places</button>
     </div>
-    <span class="sep">│</span>
-    <button class="btn" id="goBtn" onclick="fetchData()" style="font-size:11px;padding:4px 10px;color:var(--muted);border-color:var(--border);">🔍 取得</button>
     <span class="sep">│</span>
     <button class="btn" id="shareBtn" onclick="shareLink()" style="font-size:11px;padding:5px 12px;">🔗 共有リンク</button>
   </div>
@@ -476,12 +465,6 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
     <span>🛣 道路をのぞく</span>
   </label>
   <span id="filterCount" style="font-size:10px;color:var(--muted);margin-left:8px;"></span>
-  <span class="sep" id="opacitySep" style="margin-left:4px;display:none;">│</span>
-  <label id="opacityLabel" style="font-size:11px;color:var(--muted);display:none;">🗺 重ね透過：</label>
-  <input type="range" id="overlayOpacity" min="0" max="100" value="60"
-    oninput="updateOverlayOpacity()"
-    style="width:80px;accent-color:#6688ff;cursor:pointer;display:none;">
-  <span id="opacityVal" style="font-size:12px;font-weight:700;color:#88aaff;min-width:32px;display:none;">60%</span>
 </div>
 
 <div class="keyword-bar">
@@ -492,6 +475,17 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   <button class="btn go" id="goBtnMain" onclick="fetchData()" style="padding:5px 18px;font-size:13px;flex-shrink:0;">🔍 取得</button>
   <span style="color:var(--border);margin:0 4px;">│</span>
   <div class="add-kw-group">
+    <input type="text" id="kwInput" placeholder="地名入力…" style="width:90px"
+      autocomplete="off"
+      onkeydown="if(event.key==='Enter')addKeyword()">
+    <div class="palette-area" id="paletteArea"></div>
+    <div class="palette-custom" id="paletteCustom" title="カスタムカラー" onclick="document.getElementById('colorPicker').click()"></div>
+    <input type="color" id="colorPicker" value="#e8003d"
+      style="width:0;height:0;opacity:0;position:absolute"
+      oninput="onCustomColor(this.value)">
+    <button class="btn" onclick="addKeyword()">＋</button>
+  </div>
+</div>
     <input type="text" id="kwInput" placeholder="地名入力…" style="width:90px"
       autocomplete="off"
       onkeydown="if(event.key==='Enter')addKeyword()">
@@ -558,65 +552,28 @@ const TILES = {
   gsipale:  L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', { attribution: '© 国土地理院', maxZoom: 18 }),
   gsirelief:L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/relief/{z}/{x}/{y}.png', { attribution: '© 国土地理院', maxZoom: 15 }),
   gsiphoto: L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', { attribution: '© 国土地理院', maxZoom: 18 }),
-};
-
-// オーバーレイ専用（今昔マップ＋地理院）→ 毎回newしてopacityをひとつのレイヤにだけあてる
-const OVERLAY_DEFS = {
-  kjmap_2man: { url: 'https://ktgis.net/kjmapw/kjtilemap/tokyo50/2man/{z}/{x}/{-y}.png', attr: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', max: 16, min: 8 },
-  kjmap_00:   { url: 'https://ktgis.net/kjmapw/kjtilemap/tokyo50/00/{z}/{x}/{-y}.png',   attr: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', max: 16, min: 8 },
-  kjmap_01:   { url: 'https://ktgis.net/kjmapw/kjtilemap/tokyo50/01/{z}/{x}/{-y}.png',   attr: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', max: 16, min: 8 },
-  kjmap_02:   { url: 'https://ktgis.net/kjmapw/kjtilemap/tokyo50/02/{z}/{x}/{-y}.png',   attr: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', max: 16, min: 8 },
-  kjmap_03:   { url: 'https://ktgis.net/kjmapw/kjtilemap/tokyo50/03/{z}/{x}/{-y}.png',   attr: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', max: 16, min: 8 },
-  kjmap_04:   { url: 'https://ktgis.net/kjmapw/kjtilemap/tokyo50/04/{z}/{x}/{-y}.png',   attr: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', max: 16, min: 8 },
-  kjmap_05:   { url: 'https://ktgis.net/kjmapw/kjtilemap/tokyo50/05/{z}/{x}/{-y}.png',   attr: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', max: 16, min: 8 },
-  gsi:        { url: 'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',          attr: '© 国土地理院', max: 18, min: 1 },
-  gsipale:    { url: 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png',         attr: '© 国土地理院', max: 18, min: 1 },
-  gsiphoto:   { url: 'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',attr: '© 国土地理院', max: 18, min: 1 },
+  kjmap_2man: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/2man/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  kjmap_00:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/00/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  kjmap_01:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/01/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  kjmap_02:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/02/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  kjmap_03:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/03/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  kjmap_04:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/04/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  kjmap_05:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/05/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
 };
 TILES.white.addTo(map);
 let currentTile = 'white';
-let overlayLayer = null;
 
 function changeTile() {
   const val = document.getElementById('tileSelect').value;
   if (val === currentTile) return;
   map.removeLayer(TILES[currentTile]);
   TILES[val].addTo(map);
-  // オーバーレイがあれば最前面に再配置
-  if (overlayLayer) overlayLayer.bringToFront();
   currentTile = val;
 }
 
-function showOpacitySlider(show) {
-  ['opacitySep','opacityLabel','overlayOpacity','opacityVal'].forEach(id => {
-    document.getElementById(id).style.display = show ? (id === 'overlayOpacity' ? 'block' : 'inline') : 'none';
-  });
-}
-
-function changeOverlay() {
-  const val = document.getElementById('overlaySelect').value;
-  if (overlayLayer) { map.removeLayer(overlayLayer); overlayLayer = null; }
-  if (val === 'none') { showOpacitySlider(false); return; }
-
-  const def = OVERLAY_DEFS[val];
-  if (!def) return;
-  const opacity = parseInt(document.getElementById('overlayOpacity').value) / 100;
-  overlayLayer = L.tileLayer(def.url, {
-    attribution: def.attr,
-    maxZoom: def.max, minZoom: def.min,
-    opacity: opacity,
-  });
-  overlayLayer.addTo(map);
-  overlayLayer.bringToFront();
-  if (typeof markerLayer !== 'undefined') markerLayer.bringToFront();
-  showOpacitySlider(true);
-}
-
-function updateOverlayOpacity() {
-  const val = parseInt(document.getElementById('overlayOpacity').value);
-  document.getElementById('opacityVal').textContent = val + '%';
-  if (overlayLayer) overlayLayer.setOpacity(val / 100);
-}
+function showOpacitySlider() {}
+function changeOverlay() {}
+function updateOverlayOpacity() {}
 
 const markerLayer = L.layerGroup().addTo(map);
 
@@ -847,7 +804,7 @@ async function fetchData() {
   }
 
   showLoading(true, `${dataSource === 'google' ? 'Google Places' : 'Overpass API'} から取得中... 半径${(r/1000).toFixed(1)}km`);
-  document.querySelectorAll('#goBtn, #goBtnMain').forEach(b => b.disabled = true);
+  document.getElementById('goBtnMain').disabled = true;
 
   try {
     if (dataSource === 'google') {
@@ -857,7 +814,7 @@ async function fetchData() {
     }
   } finally {
     showLoading(false);
-    document.querySelectorAll('#goBtn, #goBtnMain').forEach(b => b.disabled = false);
+    document.getElementById('goBtnMain').disabled = false;
   }
 }
 

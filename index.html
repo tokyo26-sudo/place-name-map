@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.8.5</title>
+<title>建物名 地名マップ v2.8.6</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -396,7 +396,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.8.5</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.8.6</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -887,30 +887,80 @@ function flyToAreaCenter() {
     `${areaCacheInfo.lat.toFixed(4)}, ${areaCacheInfo.lng.toFixed(4)}`;
 }
 
-// ===== 市区町村境（dataofjapan GeoJSON）=====
+// ===== 市区町村境（smartnews-smri/japan-topography 都道府県別GeoJSON）=====
+// 都道府県コード→ファイル名マップ（01〜47）
 let boundaryLayer = null;
 let boundaryVisible = false;
-let boundaryDataCache = null;
+let boundaryPrefCache = {}; // よみこみずみ都道府県データをキャッシュ
 
-async function fetchBoundaryData() {
-  if (boundaryDataCache) return boundaryDataCache;
-  // japan.geojson: 都道府県・市区町村境をふくむ（CORS OK）
-  const url = 'https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson';
+// 地図のひょうじはんいにかさなる都道府県コードをかえす（おおよその座標からはんてい）
+function getVisiblePrefCodes() {
+  const bounds = map.getBounds();
+  const n = bounds.getNorth(), s = bounds.getSouth();
+  const e = bounds.getEast(),  w = bounds.getWest();
+  // 都道府県の代表座標（中心点）リスト
+  // 都道府県コード・中心lat・中心lng のリスト
+  const PREFS = [
+    ['01',43.46,142.38],['02',40.82,140.74],['03',39.70,141.15],['04',38.27,140.87],['05',39.72,140.10],
+    ['06',38.24,140.36],['07',37.75,140.47],['08',36.34,140.45],['09',36.57,139.88],['10',36.39,139.07],
+    ['11',35.86,139.65],['12',35.60,140.12],['13',35.69,139.69],['14',35.45,139.64],['15',37.90,139.02],
+    ['16',36.70,137.21],['17',36.59,136.63],['18',36.07,136.22],['19',35.66,138.57],['20',36.65,138.18],
+    ['21',35.39,136.72],['22',34.98,138.38],['23',35.18,137.10],['24',34.73,136.51],['25',35.00,135.87],
+    ['26',35.02,135.76],['27',34.69,135.50],['28',34.69,135.18],['29',34.69,135.83],['30',34.23,135.17],
+    ['31',35.50,133.63],['32',35.47,133.05],['33',34.66,133.93],['34',34.40,132.45],['35',34.19,131.47],
+    ['36',34.07,134.56],['37',34.34,134.04],['38',33.84,132.77],['39',33.56,133.53],['40',33.61,130.74],
+    ['41',33.25,130.30],['42',32.74,129.87],['43',32.79,130.74],['44',33.24,131.61],['45',31.91,131.42],
+    ['46',31.56,130.56],['47',26.21,127.68],
+  ];
+  const margin = 2.5;
+  return PREFS
+    .filter(([code, lat, lng]) => {
+      return lat >= s - margin && lat <= n + margin
+          && lng >= w - margin && lng <= e + margin;
+    })
+    .map(([code]) => code);
+}
+
+async function fetchPref(code) {
+  if (boundaryPrefCache[code]) return boundaryPrefCache[code];
+  const url = `https://raw.githubusercontent.com/smartnews-smri/japan-topography/main/data/municipality/geojson/s0010/${code}.geojson`;
   try {
     const res = await fetch(url);
-    if (!res.ok) throw new Error(res.status);
-    boundaryDataCache = await res.json();
-    return boundaryDataCache;
-  } catch(e) {
-    return null;
+    if (!res.ok) return null;
+    const data = await res.json();
+    boundaryPrefCache[code] = data;
+    return data;
+  } catch(e) { return null; }
+}
+
+async function renderBoundary() {
+  if (!boundaryVisible) return;
+  if (boundaryLayer) { map.removeLayer(boundaryLayer); boundaryLayer = null; }
+
+  const codes = getVisiblePrefCodes();
+  const results = await Promise.all(codes.map(fetchPref));
+  if (!boundaryVisible) return;
+
+  // ぜんぶのfeatureをまとめてひとつのlayerにいれる
+  const allFeatures = { type: 'FeatureCollection', features: [] };
+  for (const data of results) {
+    if (data && data.features) allFeatures.features.push(...data.features);
   }
+
+  boundaryLayer = L.geoJSON(allFeatures, {
+    style: { color: '#ff4400', weight: 1.5, opacity: 0.85, fill: false },
+    interactive: false,
+  }).addTo(map);
+  markerLayer.remove();
+  markerLayer.addTo(map);
 }
 
 async function toggleBoundary() {
   const btn = document.getElementById('boundaryBtn');
   if (boundaryVisible) {
-    if (boundaryLayer) { map.removeLayer(boundaryLayer); boundaryLayer = null; }
     boundaryVisible = false;
+    if (boundaryLayer) { map.removeLayer(boundaryLayer); boundaryLayer = null; }
+    map.off('moveend zoomend', renderBoundary);
     btn.textContent = '🗺 市区町村境 OFF';
     btn.style.color = '';
     btn.style.borderColor = '';
@@ -918,31 +968,14 @@ async function toggleBoundary() {
     return;
   }
 
-  btn.textContent = '🗺 よみこみちゅう...';
-  btn.disabled = true;
-  setStatus('市区町村境データよみこみちゅう...', true);
-
-  const data = await fetchBoundaryData();
-  btn.disabled = false;
-
-  if (!data) {
-    setStatus('市区町村境データのよみこみしっぱい…');
-    btn.textContent = '🗺 市区町村境 OFF';
-    return;
-  }
-
-  boundaryLayer = L.geoJSON(data, {
-    style: { color: '#ff4400', weight: 1.5, opacity: 0.85, fill: false },
-    interactive: false,
-  }).addTo(map);
-
-  markerLayer.remove();
-  markerLayer.addTo(map);
   boundaryVisible = true;
   btn.textContent = '🗺 市区町村境 ON';
   btn.style.color = '#ff8866';
   btn.style.borderColor = '#ff4400';
-  setStatus('市区町村境をひょうじしたヨ！');
+  setStatus('市区町村境よみこみちゅう...');
+  map.on('moveend zoomend', renderBoundary);
+  await renderBoundary();
+  setStatus('市区町村境ひょうじしたヨ！');
 }
 // ===== キーワドでフィルタ（Overpassによびかけない）=====
 function filterAndShow() {

@@ -887,110 +887,63 @@ function flyToAreaCenter() {
     `${areaCacheInfo.lat.toFixed(4)}, ${areaCacheInfo.lng.toFixed(4)}`;
 }
 
-// ===== 市区町村境（adminbound GeoJSONタイル・自前フェッチ）=====
+// ===== 市区町村境（dataofjapan GeoJSON）=====
 let boundaryLayer = null;
 let boundaryVisible = false;
-let boundaryTileCache = {}; // よみこみずみタイルをキャッシュ
-let boundaryActiveReqs = new Set(); // ちゅうだんようにつかう
+let boundaryDataCache = null;
 
-// タイル座標からGeoJSONをとってポリラインをかく
-async function loadBoundaryTile(z, x, y) {
-  const key = `${z}/${x}/${y}`;
-  if (boundaryTileCache[key]) return boundaryTileCache[key];
-  const url = `https://cyberjapandata.gsi.go.jp/xyz/adminbound/${z}/${x}/${y}.geojson`;
+async function fetchBoundaryData() {
+  if (boundaryDataCache) return boundaryDataCache;
+  // japan.geojson: 都道府県・市区町村境をふくむ（CORS OK）
+  const url = 'https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson';
   try {
     const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = await res.json();
-    boundaryTileCache[key] = data;
-    return data;
+    if (!res.ok) throw new Error(res.status);
+    boundaryDataCache = await res.json();
+    return boundaryDataCache;
   } catch(e) {
     return null;
   }
 }
 
-// 地図のひょうじはんいにあうタイルいちをけいさん（ズム10固定）
-function getVisibleTiles(zoom) {
-  const bounds = map.getBounds();
-  const tileZ = zoom;
-  const tileCount = Math.pow(2, tileZ);
-  function lngToTileX(lng) { return Math.floor((lng + 180) / 360 * tileCount); }
-  function latToTileY(lat) {
-    const rad = lat * Math.PI / 180;
-    return Math.floor((1 - Math.log(Math.tan(rad) + 1/Math.cos(rad)) / Math.PI) / 2 * tileCount);
-  }
-  const xMin = lngToTileX(bounds.getWest());
-  const xMax = lngToTileX(bounds.getEast());
-  const yMin = latToTileY(bounds.getNorth());
-  const yMax = latToTileY(bounds.getSouth());
-  const tiles = [];
-  for (let x = xMin; x <= xMax; x++)
-    for (let y = yMin; y <= yMax; y++)
-      tiles.push({x, y, z: tileZ});
-  return tiles;
-}
-
-async function renderBoundary() {
-  if (!boundaryVisible) return;
-  if (boundaryLayer) { map.removeLayer(boundaryLayer); boundaryLayer = null; }
-
-  const TILE_Z = 10; // ズム10がちょうどいいデスヨ（市区町村さかいがでるレベル）
-  const tiles = getVisibleTiles(TILE_Z);
-  const lines = [];
-
-  await Promise.all(tiles.map(async ({x, y, z}) => {
-    const data = await loadBoundaryTile(z, x, y);
-    if (!data || !data.features) return;
-    for (const f of data.features) {
-      if (!f.geometry) continue;
-      const coords = f.geometry.type === 'LineString'
-        ? [f.geometry.coordinates]
-        : f.geometry.type === 'MultiLineString'
-        ? f.geometry.coordinates
-        : f.geometry.type === 'Polygon'
-        ? f.geometry.coordinates
-        : f.geometry.type === 'MultiPolygon'
-        ? f.geometry.coordinates.flat()
-        : [];
-      for (const ring of coords) {
-        if (ring.length < 2) continue;
-        lines.push(ring.map(([lng, lat]) => [lat, lng]));
-      }
-    }
-  }));
-
-  if (!boundaryVisible) return; // よみこみちゅうにOFFになたとき
-  boundaryLayer = L.polyline(lines, {
-    color: '#ff4400',
-    weight: 1.5,
-    opacity: 0.85,
-    interactive: false,
-  }).addTo(map);
-  markerLayer.remove();
-  markerLayer.addTo(map);
-}
-
-function toggleBoundary() {
+async function toggleBoundary() {
   const btn = document.getElementById('boundaryBtn');
   if (boundaryVisible) {
-    boundaryVisible = false;
     if (boundaryLayer) { map.removeLayer(boundaryLayer); boundaryLayer = null; }
-    map.off('moveend zoomend', renderBoundary);
+    boundaryVisible = false;
     btn.textContent = '🗺 市区町村境 OFF';
     btn.style.color = '';
     btn.style.borderColor = '';
     setStatus('市区町村境をかくしたヨ');
     return;
   }
+
+  btn.textContent = '🗺 よみこみちゅう...';
+  btn.disabled = true;
+  setStatus('市区町村境データよみこみちゅう...', true);
+
+  const data = await fetchBoundaryData();
+  btn.disabled = false;
+
+  if (!data) {
+    setStatus('市区町村境データのよみこみしっぱい…');
+    btn.textContent = '🗺 市区町村境 OFF';
+    return;
+  }
+
+  boundaryLayer = L.geoJSON(data, {
+    style: { color: '#ff4400', weight: 1.5, opacity: 0.85, fill: false },
+    interactive: false,
+  }).addTo(map);
+
+  markerLayer.remove();
+  markerLayer.addTo(map);
   boundaryVisible = true;
   btn.textContent = '🗺 市区町村境 ON';
   btn.style.color = '#ff8866';
   btn.style.borderColor = '#ff4400';
-  setStatus('市区町村境よみこみちゅう...（地理院 adminbound）');
-  map.on('moveend zoomend', renderBoundary);
-  renderBoundary();
+  setStatus('市区町村境をひょうじしたヨ！');
 }
-
 // ===== キーワドでフィルタ（Overpassによびかけない）=====
 function filterAndShow() {
   if (areaCache.length === 0) {

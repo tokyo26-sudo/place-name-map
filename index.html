@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.6.4</title>
+<title>建物名 地名マップ v2.7</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -394,7 +395,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.6.4</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.7</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -442,6 +443,8 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   <span class="sep">│</span>
   <button class="btn" id="areaBtn" onclick="fetchAreaData()" style="background:#0a2a10;border-color:#2a6a3a;color:#66dd88;font-weight:700;padding:5px 14px;">📥 エリアデータ取得</button>
   <button class="btn" id="areaFlyBtn" onclick="flyToAreaCenter()" style="font-size:11px;padding:4px 10px;display:none;">📦 取得エリアへ</button>
+  <span class="sep">│</span>
+  <button class="btn" id="boundaryBtn" onclick="toggleBoundary()" style="font-size:11px;padding:4px 10px;">🗺 市区町村境 OFF</button>
   <span id="areaStatus" style="font-size:11px;color:var(--muted);"></span>
   <div class="center-info">
     中心：<span id="centerDisplay">取得中...</span>
@@ -881,6 +884,73 @@ function flyToAreaCenter() {
   centerLng = areaCacheInfo.lng;
   document.getElementById('centerDisplay').textContent =
     `${areaCacheInfo.lat.toFixed(4)}, ${areaCacheInfo.lng.toFixed(4)}`;
+}
+
+// ===== 市区町村境 =====
+let boundaryLayer = null;
+let boundaryVisible = false;
+
+async function toggleBoundary() {
+  const btn = document.getElementById('boundaryBtn');
+  if (boundaryVisible) {
+    // OFFにする
+    if (boundaryLayer) { map.removeLayer(boundaryLayer); boundaryLayer = null; }
+    boundaryVisible = false;
+    btn.textContent = '🗺 市区町村境 OFF';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+    setStatus('市区町村境をかくしたヨ');
+    return;
+  }
+
+  // ONにする → Overpassからとってくる
+  if (centerLat === null) { setStatus('先に中心点をきめてクダサイ！'); return; }
+  const r = parseInt(document.getElementById('radius').value) || 2000;
+
+  setStatus('市区町村境データ取得中...', true);
+  btn.disabled = true;
+
+  const query = `[out:json][timeout:30];
+(
+  relation["boundary"="administrative"]["admin_level"="7"](around:${r},${centerLat},${centerLng});
+  relation["boundary"="administrative"]["admin_level"="8"](around:${r},${centerLat},${centerLng});
+);
+out geom;`;
+
+  try {
+    const res = await fetch('https://overpass-api.de/api/interpreter', { method:'POST', body: query });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+
+    boundaryLayer = L.layerGroup();
+
+    for (const rel of data.elements) {
+      if (!rel.members) continue;
+      for (const member of rel.members) {
+        if (member.type === 'way' && member.geometry) {
+          const latlngs = member.geometry.map(p => [p.lat, p.lon]);
+          L.polyline(latlngs, {
+            color: '#ff4400',
+            weight: 2.5,
+            opacity: 0.8,
+            dashArray: null,
+          }).addTo(boundaryLayer);
+        }
+      }
+    }
+
+    boundaryLayer.addTo(map);
+    markerLayer.bringToFront();
+    boundaryVisible = true;
+    btn.textContent = '🗺 市区町村境 ON';
+    btn.style.color = '#ff8866';
+    btn.style.borderColor = '#ff4400';
+    setStatus(`市区町村境をひょうじしたヨ！（${data.elements.length}件）`);
+  } catch(e) {
+    setStatus('市区町村境データとれなかたヨ：' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ===== キーワドでフィルタ（Overpassによびかけない）=====

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.8.5dbg</title>
+<title>建物名 地名マップ v2.8.5</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -396,7 +396,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.8.5dbg</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.8.5</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -887,56 +887,108 @@ function flyToAreaCenter() {
     `${areaCacheInfo.lat.toFixed(4)}, ${areaCacheInfo.lng.toFixed(4)}`;
 }
 
-// ===== 市区町村境（geoshape ベクタタイル）=====
+// ===== 市区町村境（adminbound GeoJSONタイル・自前フェッチ）=====
 let boundaryLayer = null;
 let boundaryVisible = false;
+let boundaryTileCache = {}; // よみこみずみタイルをキャッシュ
+let boundaryActiveReqs = new Set(); // ちゅうだんようにつかう
+
+// タイル座標からGeoJSONをとってポリラインをかく
+async function loadBoundaryTile(z, x, y) {
+  const key = `${z}/${x}/${y}`;
+  if (boundaryTileCache[key]) return boundaryTileCache[key];
+  const url = `https://cyberjapandata.gsi.go.jp/xyz/adminbound/${z}/${x}/${y}.geojson`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    boundaryTileCache[key] = data;
+    return data;
+  } catch(e) {
+    return null;
+  }
+}
+
+// 地図のひょうじはんいにあうタイルいちをけいさん（ズム10固定）
+function getVisibleTiles(zoom) {
+  const bounds = map.getBounds();
+  const tileZ = zoom;
+  const tileCount = Math.pow(2, tileZ);
+  function lngToTileX(lng) { return Math.floor((lng + 180) / 360 * tileCount); }
+  function latToTileY(lat) {
+    const rad = lat * Math.PI / 180;
+    return Math.floor((1 - Math.log(Math.tan(rad) + 1/Math.cos(rad)) / Math.PI) / 2 * tileCount);
+  }
+  const xMin = lngToTileX(bounds.getWest());
+  const xMax = lngToTileX(bounds.getEast());
+  const yMin = latToTileY(bounds.getNorth());
+  const yMax = latToTileY(bounds.getSouth());
+  const tiles = [];
+  for (let x = xMin; x <= xMax; x++)
+    for (let y = yMin; y <= yMax; y++)
+      tiles.push({x, y, z: tileZ});
+  return tiles;
+}
+
+async function renderBoundary() {
+  if (!boundaryVisible) return;
+  if (boundaryLayer) { map.removeLayer(boundaryLayer); boundaryLayer = null; }
+
+  const TILE_Z = 10; // ズム10がちょうどいいデスヨ（市区町村さかいがでるレベル）
+  const tiles = getVisibleTiles(TILE_Z);
+  const lines = [];
+
+  await Promise.all(tiles.map(async ({x, y, z}) => {
+    const data = await loadBoundaryTile(z, x, y);
+    if (!data || !data.features) return;
+    for (const f of data.features) {
+      if (!f.geometry) continue;
+      const coords = f.geometry.type === 'LineString'
+        ? [f.geometry.coordinates]
+        : f.geometry.type === 'MultiLineString'
+        ? f.geometry.coordinates
+        : f.geometry.type === 'Polygon'
+        ? f.geometry.coordinates
+        : f.geometry.type === 'MultiPolygon'
+        ? f.geometry.coordinates.flat()
+        : [];
+      for (const ring of coords) {
+        if (ring.length < 2) continue;
+        lines.push(ring.map(([lng, lat]) => [lat, lng]));
+      }
+    }
+  }));
+
+  if (!boundaryVisible) return; // よみこみちゅうにOFFになたとき
+  boundaryLayer = L.polyline(lines, {
+    color: '#ff4400',
+    weight: 1.5,
+    opacity: 0.85,
+    interactive: false,
+  }).addTo(map);
+  markerLayer.remove();
+  markerLayer.addTo(map);
+}
 
 function toggleBoundary() {
   const btn = document.getElementById('boundaryBtn');
   if (boundaryVisible) {
-    if (boundaryLayer) {
-      map.removeLayer(boundaryLayer);
-      boundaryLayer = null;
-    }
     boundaryVisible = false;
+    if (boundaryLayer) { map.removeLayer(boundaryLayer); boundaryLayer = null; }
+    map.off('moveend zoomend', renderBoundary);
     btn.textContent = '🗺 市区町村境 OFF';
     btn.style.color = '';
     btn.style.borderColor = '';
     setStatus('市区町村境をかくしたヨ');
     return;
   }
-
-  // デバグ版：レイヤ名をコンソルにだしてしらべルヨ
-  const _seenLayers = new Set();
-  boundaryLayer = L.vectorGrid.protobuf(
-    'https://geoshape.ex.nii.ac.jp/city/vector/{z}/{x}/{y}.pbf',
-    {
-      rendererFactory: L.canvas.tile,
-      vectorTileLayerStyles: new Proxy({}, {
-        get(target, layerName) {
-          if (typeof layerName === 'string' && !_seenLayers.has(layerName)) {
-            _seenLayers.add(layerName);
-            console.log('geoshape layer found:', layerName);
-          }
-          return { weight: 0, opacity: 0, fill: false };
-        }
-      }),
-      interactive: false,
-      maxNativeZoom: 16,
-      maxZoom: 19,
-      attribution: '© Geoshapeリポジトリ（NII）',
-    }
-  );
-
-  boundaryLayer.addTo(map);
-  // マーカーをさいどまえめんにもってくル
-  markerLayer.remove();
-  markerLayer.addTo(map);
   boundaryVisible = true;
   btn.textContent = '🗺 市区町村境 ON';
   btn.style.color = '#ff8866';
   btn.style.borderColor = '#ff4400';
-  setStatus('市区町村境をひょうじしたヨ！（地理院ベクタタイル）');
+  setStatus('市区町村境よみこみちゅう...（地理院 adminbound）');
+  map.on('moveend zoomend', renderBoundary);
+  renderBoundary();
 }
 
 // ===== キーワドでフィルタ（Overpassによびかけない）=====

@@ -475,6 +475,10 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
         <option value="fukuoka_06">📜 福岡 1991-2000年</option>
       </optgroup>
     </select>
+    <input type="range" id="tileOpacity" min="0" max="1" step="0.05" value="1"
+      style="width:70px;cursor:pointer;accent-color:#6688ff;vertical-align:middle;"
+      oninput="changeTileOpacity(this.value)"
+      title="地図のこさ">
     <span class="sep">│</span>
     <label>データ：</label>
     <div class="source-toggle">
@@ -662,6 +666,13 @@ function changeTile() {
   map.removeLayer(TILES[currentTile]);
   TILES[val].addTo(map);
   currentTile = val;
+  const slider = document.getElementById('tileOpacity');
+  if (slider) { slider.value = 1; }
+  TILES[currentTile].setOpacity(1);
+}
+
+function changeTileOpacity(val) {
+  TILES[currentTile].setOpacity(parseFloat(val));
 }
 
 function showOpacitySlider() {}

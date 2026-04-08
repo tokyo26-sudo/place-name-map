@@ -371,17 +371,33 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 <div class="modal-overlay" id="apiKeyModal">
   <div class="modal-card">
     <div class="modal-title">🔑 Google Places APIキー設定</div>
-    <div class="modal-desc">
-      Google Places APIキーをにゅうりょくしてクダサイ。<br>
-      キーはこのブラウザにほぞんされルヨ（localStorageを使用）。
-    </div>
-    <input type="text" class="modal-input" id="apiKeyInput"
-      placeholder="AIzaSy..." autocomplete="off">
-    <div class="modal-note">
-      ⚠️ APIキーはこのHTMLのソースからはみえないデスガ、<br>
-      ブラウザのdevToolsからはみえマス。<br>
-      信頼できるひとだけとURLをシェアしてクダサイネ！
-    </div>
+    <div class="modal-desc" style="line-height:2;">
+      <p style="margin-bottom:16px;">荒れ狂う地名の海、今日も誰かがクリックする。検索バーに隠された、愛と哀しみの果てに何を見るのか！？</p>
+
+      <p><strong>① 中心点を定めろ！</strong></p>
+      <p>GPSボタンを押すか、住所を検索しろ。地図をクリックしてもいい。お前の立つ場所を、この地図に刻め。</p>
+
+      <p style="margin-top:12px;"><strong>② エリアデータを取得しろ！</strong></p>
+      <p>「📥 エリアデータ取得」を押せ。半径2000mの建物データがお前の手に渡る。サーバーが答えるまで、待つことも強さだ。半径を広げすぎると…サーバーは死ぬ。</p>
+
+      <p style="margin-top:12px;"><strong>③ キーワードを入れろ！</strong></p>
+      <p>「谷」でも「川」でも「丘」でもいい。お前が探したい地名を入力し、プラスボタンを押せ。色を選ぶことも忘れるな。</p>
+
+      <p style="margin-top:12px;"><strong>④ 検索しろ！</strong></p>
+      <p>地図に点が灯る。その数だけ、地名の記憶がある。点をクリックし、その土地の名を知れ。</p>
+
+      <hr style="border:none;border-top:1px solid #2a2a3a;margin:16px 0;">
+
+      <p><strong>その他の機能</strong></p>
+      <ul style="padding-left:16px;line-height:2.2;">
+        <li>今昔マップを選べ。明治・大正・昭和の地図がお前の前に現れる。</li>
+        <li>スライダで地図を薄くしろ。点だけが浮かび上がる。それでいい。</li>
+        <li>「🔗 共有リンク」で仲間に送れ。お前の発見を、独り占めにするな。</li>
+      </ul>
+
+      <p style="margin-top:12px;">次回、地名 BUILD MAP！『検索！地名秘孔の謎！！』</p>
+      <p>お前はもう、検索している！</p>
+        </div>
     <div class="modal-btns">
       <button class="btn" onclick="closeApiModal()">キャンセル</button>
       <button class="btn go" onclick="saveApiKey()">💾 保存して有効化</button>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.9.1</title>
+<title>建物名 地名マップ v2.9.2</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -416,6 +416,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
         <li>今昔マップを選べ。明治・大正・昭和の地図がお前の前に現れる。</li>
         <li>スライダで地図を薄くしろ。点だけが浮かび上がる。それでいい。</li>
         <li>「🔗 共有リンク」で仲間に送れ。お前の発見を、独り占めにするな。</li>
+        <li>キーワードの頭に <strong>^</strong> をつけると前方一致（例：^田 → 「田」ではじまる）。末尾に <strong>$</strong> をつけると後方一致（例：田$ → 「田」でおわる）。両方つけると完全一致。</li>
       </ul>
 
       <p style="margin-top:14px;">次回、地名 BUILD MAP！『検索！地名秘孔の謎！！』</p>
@@ -434,7 +435,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.1</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.2</span>
   <button class="btn" onclick="document.getElementById('helpModal').classList.add('on')" style="font-size:13px;padding:4px 10px;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">？</button>
   <div class="area-settings">
     <label>半径</label>
@@ -717,6 +718,17 @@ function changeTileOpacity(val) {
 function showOpacitySlider() {}
 function changeOverlay() {}
 function updateOverlayOpacity() {}
+
+// キーワドマッチ（^前方一致・$後方一致・両方で完全一致・なしで部分一致）
+function matchKeyword(name, word) {
+  const fw = word.startsWith('^');
+  const bw = word.endsWith('$');
+  const w = word.replace(/^\^/, '').replace(/\$$/, '');
+  if (fw && bw) return name === w;
+  if (fw)       return name.startsWith(w);
+  if (bw)       return name.endsWith(w);
+  return name.includes(w);
+}
 
 const markerLayer = L.layerGroup().addTo(map);
 
@@ -1047,7 +1059,7 @@ function filterAndShow() {
 
   // キーワドにマッチするものだけしぼる
   allBuildings = areaCache.filter(b => {
-    b.matched = keywords.filter(kw => b.name.includes(kw.word));
+    b.matched = keywords.filter(kw => matchKeyword(b.name, kw.word));
     return b.matched.length > 0;
   });
 
@@ -1155,13 +1167,13 @@ async function fetchGoogle(r) {
       }
       for (const place of (data.places || [])) {
         const name = place.displayName?.text || '';
-        if (!name.includes(kw.word)) continue; // 名前にキーワドふくまないものはのぞく
+        if (!matchKeyword(name, kw.word)) continue; // 名前にキーワドふくまないものはのぞく
         const lat = place.location?.latitude;
         const lng = place.location?.longitude;
         if (!lat || !lng) continue;
         // かさなりチェック
         if (allBuildings.find(b => b.name === name && Math.abs(b.lat-lat)<0.0001)) continue;
-        const matched = keywords.filter(k => name.includes(k.word));
+        const matched = keywords.filter(k => matchKeyword(name, k.word));
         allBuildings.push({
           id: 'g_' + totalFound++,
           name, lat, lng, matched,
@@ -1226,7 +1238,7 @@ function isFiltered(b) {
 }
 
 function classifyAndRender() {
-  for (const b of allBuildings) b.matched = keywords.filter(kw => b.name.includes(kw.word));
+  for (const b of allBuildings) b.matched = keywords.filter(kw => matchKeyword(b.name, kw.word));
   const visible = allBuildings.filter(b => !isFiltered(b));
   const hidden  = allBuildings.length - visible.length;
   document.getElementById('filterCount').textContent =

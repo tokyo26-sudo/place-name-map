@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.9.0</title>
+<title>建物名 地名マップ v2.9.1</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -368,36 +368,21 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 <body>
 
 <!-- Google APIキー入力モーダル -->
+
 <div class="modal-overlay" id="apiKeyModal">
   <div class="modal-card">
     <div class="modal-title">🔑 Google Places APIキー設定</div>
-    <div class="modal-desc" style="line-height:2;">
-      <p style="margin-bottom:16px;">荒れ狂う地名の海、今日も誰かがクリックする。検索バーに隠された、愛と哀しみの果てに何を見るのか！？</p>
-
-      <p><strong>① 中心点を定めろ！</strong></p>
-      <p>GPSボタンを押すか、住所を検索しろ。地図をクリックしてもいい。お前の立つ場所を、この地図に刻め。</p>
-
-      <p style="margin-top:12px;"><strong>② エリアデータを取得しろ！</strong></p>
-      <p>「📥 エリアデータ取得」を押せ。半径2000mの建物データがお前の手に渡る。サーバーが答えるまで、待つことも強さだ。半径を広げすぎると…サーバーは死ぬ。</p>
-
-      <p style="margin-top:12px;"><strong>③ キーワードを入れろ！</strong></p>
-      <p>「谷」でも「川」でも「丘」でもいい。お前が探したい地名を入力し、プラスボタンを押せ。色を選ぶことも忘れるな。</p>
-
-      <p style="margin-top:12px;"><strong>④ 検索しろ！</strong></p>
-      <p>地図に点が灯る。その数だけ、地名の記憶がある。点をクリックし、その土地の名を知れ。</p>
-
-      <hr style="border:none;border-top:1px solid #2a2a3a;margin:16px 0;">
-
-      <p><strong>その他の機能</strong></p>
-      <ul style="padding-left:16px;line-height:2.2;">
-        <li>今昔マップを選べ。明治・大正・昭和の地図がお前の前に現れる。</li>
-        <li>スライダで地図を薄くしろ。点だけが浮かび上がる。それでいい。</li>
-        <li>「🔗 共有リンク」で仲間に送れ。お前の発見を、独り占めにするな。</li>
-      </ul>
-
-      <p style="margin-top:12px;">次回、地名 BUILD MAP！『検索！地名秘孔の謎！！』</p>
-      <p>お前はもう、検索している！</p>
-        </div>
+    <div class="modal-desc">
+      Google Places APIキーをにゅうりょくしてクダサイ。<br>
+      キーはこのブラウザにほぞんされルヨ（localStorageを使用）。
+    </div>
+    <input type="text" class="modal-input" id="apiKeyInput"
+      placeholder="AIzaSy..." autocomplete="off">
+    <div class="modal-note">
+      ⚠️ APIキーはこのHTMLのソースからはみえないデスガ、<br>
+      ブラウザのdevToolsからはみえマス。<br>
+      信頼できるひとだけとURLをシェアしてクダサイネ！
+    </div>
     <div class="modal-btns">
       <button class="btn" onclick="closeApiModal()">キャンセル</button>
       <button class="btn go" onclick="saveApiKey()">💾 保存して有効化</button>
@@ -409,31 +394,31 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 <div class="modal-overlay" id="helpModal">
   <div class="modal-card" style="max-width:520px;max-height:85vh;overflow-y:auto;">
     <div class="modal-title">🗺 地名 BUILD MAP つかいかた</div>
-    <div class="modal-desc" style="line-height:2;">
-      <p style="margin-bottom:16px;">荒れ狂う地名の海、今日も誰かがクリックする。検索バーに隠された、愛と哀しみの果てに何を見るのか！？</p>
+    <div class="modal-desc" style="line-height:2;color:var(--text);">
+      <p>荒れ狂う地名の海、今日も誰かがクリックする。検索バーに隠された、愛と哀しみの果てに何を見るのか！？</p>
 
-      <p><strong>① 中心点を定めよ</strong></p>
-      <p>まず地図の上に、己の立つ場所を示さねばならぬ。GPSボタンを押すか、住所を検索するかだ。日本人は古来より、「ここはどこか」を確かめることを怠らなかった。それは地に足をつけて生きるということである。</p>
+      <p style="margin-top:14px;"><strong>① 中心点を定めろ！</strong><br>
+      GPSボタンを押すか、住所を検索しろ。地図をクリックしてもいい。お前の立つ場所を、この地図に刻め。</p>
 
-      <p style="margin-top:12px;"><strong>② エリアデータを取得せよ</strong></p>
-      <p>「📥 エリアデータ取得」を押す。すると半径2000mの範囲にある、名をもつ建物のすべてが手元に集まってくる。かつて伊能忠敬が一歩一歩大地を測り歩いたように、このボタンひとつが膨大な地名の記録を手繰り寄せるのである。しばし待たれよ。</p>
-      <p style="margin-top:6px;">余談だが、半径を広げすぎると、サーバーが悲鳴をあげることがある。2000mが肝要である。</p>
+      <p style="margin-top:14px;"><strong>② エリアデータを取得しろ！</strong><br>
+      「📥 エリアデータ取得」を押せ。半径2000mの建物データがお前の手に渡る。サーバーが答えるまで、待つことも強さだ。半径を広げすぎると…サーバーは死ぬ。</p>
 
-      <p style="margin-top:12px;"><strong>③ キーワードを入れよ</strong></p>
-      <p>「谷」でもよい。「川」でもよい。「原」でも「丘」でもよい。地名というものは、その土地の歴史と地形を色濃く映し出す。気になる言葉を入力し、プラスボタンを押せばよい。</p>
+      <p style="margin-top:14px;"><strong>③ キーワードを入れろ！</strong><br>
+      「谷」でも「川」でも「丘」でもいい。お前が探したい地名を入力し、プラスボタンを押せ。色を選ぶことも忘れるな。</p>
 
-      <p style="margin-top:12px;"><strong>④ 検索せよ</strong></p>
-      <p>地図の上に点が灯る。それぞれの点は、人々がその土地に刻んだ記憶の痕跡である。かつてそこに何があったか。なぜその名がついたか。点をクリックし、想像力を働かせてほしい。</p>
+      <p style="margin-top:14px;"><strong>④ 検索しろ！</strong><br>
+      地図に点が灯る。その数だけ、地名の記憶がある。点をクリックし、その土地の名を知れ。</p>
 
       <hr style="border:none;border-top:1px solid #2a2a3a;margin:16px 0;">
 
-      <p><strong>その他の機能について</strong></p>
+      <p><strong>その他の機能</strong></p>
       <ul style="padding-left:16px;line-height:2.2;">
-        <li>今昔マップを選べば、明治・大正・昭和の地図が現れる。都市がいかに変貌を遂げたか、一目瞭然である。日本の近代化の速さには、今なお驚かされる。</li>
-        <li>スライダを動かすと地図が薄くなり、点だけが際立つ。シンプルであることは、時に雄弁である。</li>
-        <li>「🔗 共有リンク」で同僚に地図を送ることができる。知を共有することもまた、この国の美徳であった。</li>
+        <li>今昔マップを選べ。明治・大正・昭和の地図がお前の前に現れる。</li>
+        <li>スライダで地図を薄くしろ。点だけが浮かび上がる。それでいい。</li>
+        <li>「🔗 共有リンク」で仲間に送れ。お前の発見を、独り占めにするな。</li>
       </ul>
-      <p style="margin-top:12px;">次回、地名 BUILD MAP！『検索！地名秘孔の謎！！』</p>
+
+      <p style="margin-top:14px;">次回、地名 BUILD MAP！『検索！地名秘孔の謎！！』</p>
       <p>お前はもう、検索している！</p>
     </div>
     <div class="modal-btns">
@@ -449,7 +434,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.0</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.1</span>
   <button class="btn" onclick="document.getElementById('helpModal').classList.add('on')" style="font-size:13px;padding:4px 10px;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">？</button>
   <div class="area-settings">
     <label>半径</label>

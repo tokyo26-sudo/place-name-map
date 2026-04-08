@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.8.8</title>
+<title>建物名 地名マップ v2.8.9</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -396,7 +396,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.8.8</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.8.9</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -420,11 +420,61 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
         <option value="kjmap_04">📜 今昔 1975-1978年</option>
         <option value="kjmap_05">📜 今昔 1986-1989年</option>
       </optgroup>
+      <optgroup label="── 今昔マップ（京阪神）──">
+        <option value="keihansin_2man">📜 京阪神 1892-1910年</option>
+        <option value="keihansin_00">📜 京阪神 1922-1923年</option>
+        <option value="keihansin_01">📜 京阪神 1927-1935年</option>
+        <option value="keihansin_02">📜 京阪神 1947-1950年</option>
+        <option value="keihansin_03">📜 京阪神 1954-1956年</option>
+        <option value="keihansin_04">📜 京阪神 1961-1964年</option>
+        <option value="keihansin_05">📜 京阪神 1967-1970年</option>
+        <option value="keihansin_06">📜 京阪神 1975-1979年</option>
+        <option value="keihansin_07">📜 京阪神 1983-1988年</option>
+        <option value="keihansin_08">📜 京阪神 1993-1997年</option>
+      </optgroup>
+      <optgroup label="── 今昔マップ（中京）──">
+        <option value="chukyo_2man">📜 中京 1888-1898年</option>
+        <option value="chukyo_00">📜 中京 1920年</option>
+        <option value="chukyo_01">📜 中京 1932年</option>
+        <option value="chukyo_02">📜 中京 1937-1938年</option>
+        <option value="chukyo_03">📜 中京 1947年</option>
+        <option value="chukyo_04">📜 中京 1959-1960年</option>
+        <option value="chukyo_05">📜 中京 1968-1973年</option>
+        <option value="chukyo_06">📜 中京 1976-1980年</option>
+        <option value="chukyo_07">📜 中京 1984-1989年</option>
+        <option value="chukyo_08">📜 中京 1992-1996年</option>
+      </optgroup>
+      <optgroup label="── 今昔マップ（広島）──">
+        <option value="hiroshima_2man">📜 広島 1894-1899年</option>
+        <option value="hiroshima_01">📜 広島 1925-1932年</option>
+        <option value="hiroshima_02">📜 広島 1950-1954年</option>
+        <option value="hiroshima_03">📜 広島 1967-1969年</option>
+        <option value="hiroshima_04">📜 広島 1984-1990年</option>
+        <option value="hiroshima_05">📜 広島 1992-2001年</option>
+      </optgroup>
+      <optgroup label="── 今昔マップ（札幌）──">
+        <option value="sapporo_00">📜 札幌 1916年</option>
+        <option value="sapporo_01">📜 札幌 1935年</option>
+        <option value="sapporo_02">📜 札幌 1950-1952年</option>
+        <option value="sapporo_04">📜 札幌 1975-1976年</option>
+        <option value="sapporo_05">📜 札幌 1995-1998年</option>
+      </optgroup>
+      <optgroup label="── 今昔マップ（仙台）──">
+        <option value="sendai_01">📜 仙台 1928-1933年</option>
+        <option value="sendai_02">📜 仙台 1946年</option>
+        <option value="sendai_03">📜 仙台 1963-1967年</option>
+        <option value="sendai_04">📜 仙台 1977-1978年</option>
+        <option value="sendai_05">📜 仙台 1995-2000年</option>
+      </optgroup>
+      <optgroup label="── 今昔マップ（福岡・北九州）──">
+        <option value="fukuoka_01">📜 福岡 1922-1926年</option>
+        <option value="fukuoka_02">📜 福岡 1936-1938年</option>
+        <option value="fukuoka_03">📜 福岡 1948-1956年</option>
+        <option value="fukuoka_04">📜 福岡 1967-1972年</option>
+        <option value="fukuoka_05">📜 福岡 1982-1986年</option>
+        <option value="fukuoka_06">📜 福岡 1991-2000年</option>
+      </optgroup>
     </select>
-    <input type="range" id="tileOpacity" min="0" max="1" step="0.05" value="1"
-      style="width:70px;cursor:pointer;accent-color:#6688ff;vertical-align:middle;"
-      oninput="changeTileOpacity(this.value)"
-      title="地図のこさ">
     <span class="sep">│</span>
     <label>データ：</label>
     <div class="source-toggle">
@@ -560,6 +610,48 @@ const TILES = {
   kjmap_03:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/03/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
   kjmap_04:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/04/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
   kjmap_05:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/05/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  keihansin_2man: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/keihansin/2man/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  keihansin_00: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/keihansin/00/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  keihansin_01: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/keihansin/01/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  keihansin_02: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/keihansin/02/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  keihansin_03: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/keihansin/03/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  keihansin_04: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/keihansin/04/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  keihansin_05: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/keihansin/05/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  keihansin_06: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/keihansin/06/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  keihansin_07: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/keihansin/07/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  keihansin_08: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/keihansin/08/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  chukyo_2man: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/chukyo/2man/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  chukyo_00: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/chukyo/00/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  chukyo_01: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/chukyo/01/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  chukyo_02: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/chukyo/02/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  chukyo_03: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/chukyo/03/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  chukyo_04: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/chukyo/04/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  chukyo_05: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/chukyo/05/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  chukyo_06: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/chukyo/06/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  chukyo_07: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/chukyo/07/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  chukyo_08: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/chukyo/08/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  hiroshima_2man: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/hiroshima/2man/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  hiroshima_01: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/hiroshima/01/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  hiroshima_02: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/hiroshima/02/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  hiroshima_03: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/hiroshima/03/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  hiroshima_04: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/hiroshima/04/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  hiroshima_05: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/hiroshima/05/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  sapporo_00: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/sapporo/00/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  sapporo_01: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/sapporo/01/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  sapporo_02: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/sapporo/02/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  sapporo_04: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/sapporo/04/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  sapporo_05: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/sapporo/05/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  sendai_01: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/sendai/01/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  sendai_02: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/sendai/02/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  sendai_03: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/sendai/03/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  sendai_04: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/sendai/04/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  sendai_05: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/sendai/05/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  fukuoka_01: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/fukuoka/01/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  fukuoka_02: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/fukuoka/02/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  fukuoka_03: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/fukuoka/03/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  fukuoka_04: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/fukuoka/04/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  fukuoka_05: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/fukuoka/05/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  fukuoka_06: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/fukuoka/06/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
 };
 TILES.white.addTo(map);
 let currentTile = 'white';
@@ -570,14 +662,6 @@ function changeTile() {
   map.removeLayer(TILES[currentTile]);
   TILES[val].addTo(map);
   currentTile = val;
-  // タイルきりかえたらopacityをリセット
-  const slider = document.getElementById('tileOpacity');
-  if (slider) { slider.value = 1; }
-  TILES[currentTile].setOpacity(1);
-}
-
-function changeTileOpacity(val) {
-  TILES[currentTile].setOpacity(parseFloat(val));
 }
 
 function showOpacitySlider() {}

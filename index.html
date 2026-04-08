@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.9.2</title>
+<title>建物名 地名マップ v2.9.3</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -176,6 +176,19 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   width: 13px; height: 13px; cursor: pointer;
 }
 .cb-label:hover span { color: #aabbff; }
+
+/* カテゴリトグルボタン */
+.cat-toggle { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.cat-btn {
+  padding: 3px 10px; border-radius: 20px; border: 1.5px solid var(--border);
+  background: #1e1e2e; color: var(--muted); font-family: 'Noto Sans JP', sans-serif;
+  font-size: 11px; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.cat-btn.on { background: #2a3a6a; color: #88aaff; border-color: #5566bb; }
+.cat-btn.on.green  { background: #0a2a10; color: #66dd88; border-color: #2a7a3a; }
+.cat-btn.on.orange { background: #2a1500; color: #ffaa44; border-color: #aa5500; }
+.cat-btn.on.purple { background: #1a0a2a; color: #cc88ff; border-color: #6633aa; }
+.cat-btn.on.red    { background: #2a0a0a; color: #ff8888; border-color: #aa3333; }
 
 .main { display: flex; flex: 1; overflow: hidden; position: relative; }
 #map { flex: 1; cursor: crosshair; }
@@ -435,7 +448,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.2</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.3</span>
   <button class="btn" onclick="document.getElementById('helpModal').classList.add('on')" style="font-size:13px;padding:4px 10px;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">？</button>
   <div class="area-settings">
     <label>半径</label>
@@ -553,23 +566,15 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <!-- 交通機関フィルタバー -->
 <div class="filter-bar">
-  <label>表示フィルタ：</label>
-  <label class="cb-label">
-    <input type="checkbox" id="filterBusStop" checked onchange="classifyAndRender()">
-    <span>🚌 バス停をのぞく</span>
-  </label>
-  <label class="cb-label">
-    <input type="checkbox" id="filterStation" checked onchange="classifyAndRender()">
-    <span>🚉 駅・ホームをのぞく</span>
-  </label>
-  <label class="cb-label">
-    <input type="checkbox" id="filterRoute" checked onchange="classifyAndRender()">
-    <span>🗺 路線・ルートをのぞく</span>
-  </label>
-  <label class="cb-label">
-    <input type="checkbox" id="filterRoad" checked onchange="classifyAndRender()">
-    <span>🛣 道路をのぞく</span>
-  </label>
+  <label>表示カテゴリ：</label>
+  <div class="cat-toggle">
+    <button class="cat-btn on green"  id="catBuilding" onclick="toggleCat('catBuilding')">🏢 建物</button>
+    <button class="cat-btn on blue"   id="catStation"  onclick="toggleCat('catStation')">🚉 駅</button>
+    <button class="cat-btn on orange" id="catBusStop"  onclick="toggleCat('catBusStop')">🚌 バス停</button>
+    <button class="cat-btn on purple" id="catTown"     onclick="toggleCat('catTown')">🏘 町名</button>
+    <button class="cat-btn"           id="catRoute"    onclick="toggleCat('catRoute')">🗺 路線</button>
+    <button class="cat-btn"           id="catRoad"     onclick="toggleCat('catRoad')">🛣 道路</button>
+  </div>
   <span id="filterCount" style="font-size:10px;color:var(--muted);margin-left:8px;"></span>
 </div>
 
@@ -581,15 +586,14 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   <button class="btn go" id="goBtnMain" onclick="filterAndShow()" style="padding:5px 18px;font-size:13px;flex-shrink:0;">🔍 検索</button>
   <span style="color:var(--border);margin:0 4px;">│</span>
   <div class="add-kw-group">
-    <input type="text" id="kwInput" placeholder="地名入力…" style="width:90px"
-      autocomplete="off"
-      onkeydown="if(event.key==='Enter')addKeyword()">
+    <input type="text" id="kwInput" placeholder="地名入力…" style="width:100px"
+      autocomplete="off">
+    <button class="btn go" onclick="addKeyword()" style="padding:5px 12px;font-size:12px;">＋地名追加</button>
     <div class="palette-area" id="paletteArea"></div>
     <div class="palette-custom" id="paletteCustom" title="カスタムカラー" onclick="document.getElementById('colorPicker').click()"></div>
     <input type="color" id="colorPicker" value="#e8003d"
       style="width:0;height:0;opacity:0;position:absolute"
       oninput="onCustomColor(this.value)">
-    <button class="btn" onclick="addKeyword()">＋</button>
   </div>
 </div>
 
@@ -966,6 +970,7 @@ async function fetchAreaData() {
   way["name"]["shop"](around:${r},${centerLat},${centerLng});
   way["name"]["office"](around:${r},${centerLat},${centerLng});
   way["name"]["leisure"](around:${r},${centerLat},${centerLng});
+  node["place"~"suburb|neighbourhood|quarter|village|hamlet"]["name"](around:${r},${centerLat},${centerLng});
 );
 out center tags;`;
 
@@ -1009,6 +1014,7 @@ out center tags;`;
           isStation: tags.railway === 'station' || tags.railway === 'platform' || tags.railway === 'halt' || tags.public_transport === 'station',
           isRoute: tags.route != null || tags.type === 'route' || tags.type === 'route_master',
           isRoad: tags.highway != null && tags.highway !== 'bus_stop',
+          isTown: ['suburb','neighbourhood','quarter','village','hamlet'].includes(tags.place),
         };
       }).filter(Boolean);
 
@@ -1229,11 +1235,21 @@ function processElements(elements, source) {
 }
 
 // ===== RENDER =====
+function toggleCat(id) {
+  const btn = document.getElementById(id);
+  btn.classList.toggle('on');
+  classifyAndRender();
+}
+function catOn(id) { return document.getElementById(id).classList.contains('on'); }
+
 function isFiltered(b) {
-  if (document.getElementById('filterBusStop').checked && b.isBusStop) return true;
-  if (document.getElementById('filterStation').checked && b.isStation) return true;
-  if (document.getElementById('filterRoute').checked && b.isRoute)   return true;
-  if (document.getElementById('filterRoad').checked && b.isRoad)     return true;
+  if (b.isTown    && !catOn('catTown'))     return true;
+  if (b.isBusStop && !catOn('catBusStop'))  return true;
+  if (b.isStation && !catOn('catStation'))  return true;
+  if (b.isRoute   && !catOn('catRoute'))    return true;
+  if (b.isRoad    && !catOn('catRoad'))     return true;
+  // 建物・施設（上記どれでもないもの）
+  if (!b.isTown && !b.isBusStop && !b.isStation && !b.isRoute && !b.isRoad && !catOn('catBuilding')) return true;
   return false;
 }
 

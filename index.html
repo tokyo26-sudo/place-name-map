@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.8.9</title>
+<title>建物名 地名マップ v2.9.0</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -389,6 +389,42 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   </div>
 </div>
 
+<!-- つかいかたモーダル -->
+<div class="modal-overlay" id="helpModal">
+  <div class="modal-card" style="max-width:520px;max-height:85vh;overflow-y:auto;">
+    <div class="modal-title">🗺 地名 BUILD MAP つかいかた</div>
+    <div class="modal-desc" style="line-height:2;">
+      <p style="font-style:italic;border-left:3px solid #5566bb;padding-left:12px;margin-bottom:16px;">まことに小さなアプリが、地名を探そうとしている。<br>そのアプリの名を、地名 BUILD MAP という。</p>
+
+      <p><strong>① 中心点を定めよ</strong></p>
+      <p>まず地図の上に、己の立つ場所を示さねばならぬ。GPSボタンを押すか、住所を検索するかだ。日本人は古来より、「ここはどこか」を確かめることを怠らなかった。それは地に足をつけて生きるということである。</p>
+
+      <p style="margin-top:12px;"><strong>② エリアデータを取得せよ</strong></p>
+      <p>「📥 エリアデータ取得」を押す。すると半径2000mの範囲にある、名をもつ建物のすべてが手元に集まってくる。かつて伊能忠敬が一歩一歩大地を測り歩いたように、このボタンひとつが膨大な地名の記録を手繰り寄せるのである。しばし待たれよ。</p>
+      <p style="color:#aa8855;font-size:12px;margin-top:6px;">余談だが、半径を広げすぎると、サーバーが悲鳴をあげることがある。2000mが肝要である。</p>
+
+      <p style="margin-top:12px;"><strong>③ キーワードを入れよ</strong></p>
+      <p>「谷」でもよい。「川」でもよい。「原」でも「丘」でもよい。地名というものは、その土地の歴史と地形を色濃く映し出す。気になる言葉を入力し、プラスボタンを押せばよい。</p>
+
+      <p style="margin-top:12px;"><strong>④ 検索せよ</strong></p>
+      <p>地図の上に点が灯る。それぞれの点は、人々がその土地に刻んだ記憶の痕跡である。かつてそこに何があったか。なぜその名がついたか。点をクリックし、想像力を働かせてほしい。</p>
+
+      <hr style="border:none;border-top:1px solid #2a2a3a;margin:16px 0;">
+
+      <p><strong>その他の機能について</strong></p>
+      <ul style="padding-left:16px;line-height:2.2;">
+        <li>今昔マップを選べば、明治・大正・昭和の地図が現れる。都市がいかに変貌を遂げたか、一目瞭然である。日本の近代化の速さには、今なお驚かされる。</li>
+        <li>スライダを動かすと地図が薄くなり、点だけが際立つ。シンプルであることは、時に雄弁である。</li>
+        <li>「🔗 共有リンク」で同僚に地図を送ることができる。知を共有することもまた、この国の美徳であった。</li>
+      </ul>
+      <p style="color:#aa8855;font-size:12px;margin-top:6px;">余談だが、このアプリはGitHub Pagesで動いている。司馬が生きていたなら、インターネットというものをどう評したか、少々興味がある。</p>
+    </div>
+    <div class="modal-btns">
+      <button class="btn go" onclick="document.getElementById('helpModal').classList.remove('on')">とじる</button>
+    </div>
+  </div>
+</div>
+
 <!-- アプリ内ブラウザ警告 -->
 <div id="inAppBanner">
   ⚠️ このブラウザでは地図データが取得できないことがあります。SafariまたはChromeでひらいてクダサイ！
@@ -396,7 +432,8 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.8.9</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.0</span>
+  <button class="btn" onclick="document.getElementById('helpModal').classList.add('on')" style="font-size:13px;padding:4px 10px;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">？</button>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.9.4</title>
+<title>建物名 地名マップ v2.9.5</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -166,16 +166,6 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   flex-wrap: wrap;
 }
 .filter-bar label { font-size: 11px; color: var(--muted); white-space: nowrap; }
-.cb-label {
-  display: flex; align-items: center; gap: 5px;
-  cursor: pointer; font-size: 12px; color: var(--text);
-  user-select: none;
-}
-.cb-label input[type="checkbox"] {
-  accent-color: #6688ff;
-  width: 13px; height: 13px; cursor: pointer;
-}
-.cb-label:hover span { color: #aabbff; }
 
 /* カテゴリトグルボタン */
 .cat-toggle { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
@@ -188,7 +178,16 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 .cat-btn.on.green  { background: #0a2a10; color: #66dd88; border-color: #2a7a3a; }
 .cat-btn.on.orange { background: #2a1500; color: #ffaa44; border-color: #aa5500; }
 .cat-btn.on.purple { background: #1a0a2a; color: #cc88ff; border-color: #6633aa; }
-.cat-btn.on.red    { background: #2a0a0a; color: #ff8888; border-color: #aa3333; }
+.cb-label {
+  display: flex; align-items: center; gap: 5px;
+  cursor: pointer; font-size: 12px; color: var(--text);
+  user-select: none;
+}
+.cb-label input[type="checkbox"] {
+  accent-color: #6688ff;
+  width: 13px; height: 13px; cursor: pointer;
+}
+.cb-label:hover span { color: #aabbff; }
 
 .main { display: flex; flex: 1; overflow: hidden; position: relative; }
 #map { flex: 1; cursor: crosshair; }
@@ -381,7 +380,6 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 <body>
 
 <!-- Google APIキー入力モーダル -->
-
 <div class="modal-overlay" id="apiKeyModal">
   <div class="modal-card">
     <div class="modal-title">🔑 Google Places APIキー設定</div>
@@ -409,29 +407,22 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
     <div class="modal-title">🗺 地名 BUILD MAP つかいかた</div>
     <div class="modal-desc" style="line-height:2;color:var(--text);">
       <p>荒れ狂う地名の海、今日も誰かがクリックする。検索バーに隠された、愛と哀しみの果てに何を見るのか！？</p>
-
       <p style="margin-top:14px;"><strong>① 中心点を定めろ！</strong><br>
       GPSボタンを押すか、住所を検索しろ。地図をクリックしてもいい。お前の立つ場所を、この地図に刻め。</p>
-
       <p style="margin-top:14px;"><strong>② エリアデータを取得しろ！</strong><br>
       「📥 エリアデータ取得」を押せ。半径2000mの建物データがお前の手に渡る。サーバーが答えるまで、待つことも強さだ。半径を広げすぎると…サーバーは死ぬ。</p>
-
       <p style="margin-top:14px;"><strong>③ キーワードを入れろ！</strong><br>
       「谷」でも「川」でも「丘」でもいい。お前が探したい地名を入力し、プラスボタンを押せ。色を選ぶことも忘れるな。</p>
-
       <p style="margin-top:14px;"><strong>④ 検索しろ！</strong><br>
       地図に点が灯る。その数だけ、地名の記憶がある。点をクリックし、その土地の名を知れ。</p>
-
       <hr style="border:none;border-top:1px solid #2a2a3a;margin:16px 0;">
-
       <p><strong>その他の機能</strong></p>
       <ul style="padding-left:16px;line-height:2.2;">
         <li>今昔マップを選べ。明治・大正・昭和の地図がお前の前に現れる。</li>
         <li>スライダで地図を薄くしろ。点だけが浮かび上がる。それでいい。</li>
         <li>「🔗 共有リンク」で仲間に送れ。お前の発見を、独り占めにするな。</li>
-        <li>キーワードの頭に <strong>^</strong> をつけると前方一致（例：^田 → 「田」ではじまる）。末尾に <strong>$</strong> をつけると後方一致（例：田$ → 「田」でおわる）。両方つけると完全一致。</li>
+        <li>キーワードの頭に <strong>^</strong> をつけると前方一致（例：^田）。末尾に <strong>$</strong> をつけると後方一致（例：田$）。両方つけると完全一致。</li>
       </ul>
-
       <p style="margin-top:14px;">次回、地名 BUILD MAP！『検索！地名秘孔の謎！！』</p>
       <p>お前はもう、検索している！</p>
     </div>
@@ -448,95 +439,14 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.4</span>
-  <button class="btn" onclick="document.getElementById('helpModal').classList.add('on')" style="font-size:13px;padding:4px 10px;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">？</button>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.5</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
     <label>m</label>
-    <span class="sep">│</span>
-    <label>地図：</label>
-    <select id="tileSelect" onchange="changeTile()" style="background:#1a1a2a;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:12px;padding:4px 8px;outline:none;cursor:pointer;">
-      <option value="osm">🗺 カラー地図</option>
-      <option value="white" selected>⬜ 白地図</option>
-      <option value="dark">🌑 ダーク</option>
-      <option value="gsi">🗾 地理院地図</option>
-      <option value="gsipale">🗾 地理院淡色</option>
-      <option value="gsirelief">🏔 地理院陰影</option>
-      <option value="gsiphoto">📸 地理院航空写真</option>
-      <optgroup label="── 世界地図 ──">
-        <option value="esri_satellite">🛰 ESRI 衛星写真（世界）</option>
-        <option value="esri_topo">🗻 ESRI 地形図（世界）</option>
-        <option value="opentopomap">🗻 OpenTopoMap（世界）</option>
-      </optgroup>
-      <optgroup label="── 今昔マップ（首都圏）──">
-        <option value="kjmap_2man">📜 今昔 1896-1909年</option>
-        <option value="kjmap_00">📜 今昔 1917-1924年</option>
-        <option value="kjmap_01">📜 今昔 1927-1939年</option>
-        <option value="kjmap_02">📜 今昔 1944-1954年</option>
-        <option value="kjmap_03">📜 今昔 1965-1968年</option>
-        <option value="kjmap_04">📜 今昔 1975-1978年</option>
-        <option value="kjmap_05">📜 今昔 1986-1989年</option>
-      </optgroup>
-      <optgroup label="── 今昔マップ（京阪神）──">
-        <option value="keihansin_2man">📜 京阪神 1892-1910年</option>
-        <option value="keihansin_00">📜 京阪神 1922-1923年</option>
-        <option value="keihansin_01">📜 京阪神 1927-1935年</option>
-        <option value="keihansin_02">📜 京阪神 1947-1950年</option>
-        <option value="keihansin_03">📜 京阪神 1954-1956年</option>
-        <option value="keihansin_04">📜 京阪神 1961-1964年</option>
-        <option value="keihansin_05">📜 京阪神 1967-1970年</option>
-        <option value="keihansin_06">📜 京阪神 1975-1979年</option>
-        <option value="keihansin_07">📜 京阪神 1983-1988年</option>
-        <option value="keihansin_08">📜 京阪神 1993-1997年</option>
-      </optgroup>
-      <optgroup label="── 今昔マップ（中京）──">
-        <option value="chukyo_2man">📜 中京 1888-1898年</option>
-        <option value="chukyo_00">📜 中京 1920年</option>
-        <option value="chukyo_01">📜 中京 1932年</option>
-        <option value="chukyo_02">📜 中京 1937-1938年</option>
-        <option value="chukyo_03">📜 中京 1947年</option>
-        <option value="chukyo_04">📜 中京 1959-1960年</option>
-        <option value="chukyo_05">📜 中京 1968-1973年</option>
-        <option value="chukyo_06">📜 中京 1976-1980年</option>
-        <option value="chukyo_07">📜 中京 1984-1989年</option>
-        <option value="chukyo_08">📜 中京 1992-1996年</option>
-      </optgroup>
-      <optgroup label="── 今昔マップ（広島）──">
-        <option value="hiroshima_2man">📜 広島 1894-1899年</option>
-        <option value="hiroshima_01">📜 広島 1925-1932年</option>
-        <option value="hiroshima_02">📜 広島 1950-1954年</option>
-        <option value="hiroshima_03">📜 広島 1967-1969年</option>
-        <option value="hiroshima_04">📜 広島 1984-1990年</option>
-        <option value="hiroshima_05">📜 広島 1992-2001年</option>
-      </optgroup>
-      <optgroup label="── 今昔マップ（札幌）──">
-        <option value="sapporo_00">📜 札幌 1916年</option>
-        <option value="sapporo_01">📜 札幌 1935年</option>
-        <option value="sapporo_02">📜 札幌 1950-1952年</option>
-        <option value="sapporo_04">📜 札幌 1975-1976年</option>
-        <option value="sapporo_05">📜 札幌 1995-1998年</option>
-      </optgroup>
-      <optgroup label="── 今昔マップ（仙台）──">
-        <option value="sendai_01">📜 仙台 1928-1933年</option>
-        <option value="sendai_02">📜 仙台 1946年</option>
-        <option value="sendai_03">📜 仙台 1963-1967年</option>
-        <option value="sendai_04">📜 仙台 1977-1978年</option>
-        <option value="sendai_05">📜 仙台 1995-2000年</option>
-      </optgroup>
-      <optgroup label="── 今昔マップ（福岡・北九州）──">
-        <option value="fukuoka_01">📜 福岡 1922-1926年</option>
-        <option value="fukuoka_02">📜 福岡 1936-1938年</option>
-        <option value="fukuoka_03">📜 福岡 1948-1956年</option>
-        <option value="fukuoka_04">📜 福岡 1967-1972年</option>
-        <option value="fukuoka_05">📜 福岡 1982-1986年</option>
-        <option value="fukuoka_06">📜 福岡 1991-2000年</option>
-      </optgroup>
-    </select>
-    <input type="range" id="tileOpacity" min="0" max="1" step="0.05" value="1"
-      style="width:70px;cursor:pointer;accent-color:#6688ff;vertical-align:middle;"
-      oninput="changeTileOpacity(this.value)"
-      title="地図のこさ">
+    <button class="btn" onclick="setRadius(2000)" style="font-size:11px;padding:3px 8px;">2km</button>
+    <button class="btn" onclick="setRadius(5000)" style="font-size:11px;padding:3px 8px;">5km</button>
+    <button class="btn" onclick="setRadius(10000)" style="font-size:11px;padding:3px 8px;">10km</button>
     <span class="sep">│</span>
     <label>データ：</label>
     <div class="source-toggle">
@@ -545,6 +455,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
     </div>
     <span class="sep">│</span>
     <button class="btn" id="shareBtn" onclick="shareLink()" style="font-size:11px;padding:5px 12px;">🔗 共有リンク</button>
+    <button class="btn" onclick="document.getElementById('helpModal').classList.add('on')" style="font-size:13px;padding:4px 10px;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">？</button>
   </div>
 </header>
 
@@ -569,12 +480,95 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   </div>
 </div>
 
-<!-- 交通機関フィルタバー -->
+<!-- フィルタバー -->
 <div class="filter-bar">
+  <label>地図：</label>
+  <select id="tileSelect" onchange="changeTile()" style="background:#1a1a2a;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:12px;padding:4px 8px;outline:none;cursor:pointer;">
+    <option value="osm">🗺 カラー地図</option>
+    <option value="white" selected>⬜ 白地図</option>
+    <option value="dark">🌑 ダーク</option>
+    <option value="gsi">🗾 地理院地図</option>
+    <option value="gsipale">🗾 地理院淡色</option>
+    <option value="gsirelief">🏔 地理院陰影</option>
+    <option value="gsiphoto">📸 地理院航空写真</option>
+    <optgroup label="── 世界地図 ──">
+      <option value="esri_satellite">🛰 ESRI 衛星写真（世界）</option>
+      <option value="esri_topo">🗻 ESRI 地形図（世界）</option>
+      <option value="opentopomap">🗻 OpenTopoMap（世界）</option>
+    </optgroup>
+    <optgroup label="── 今昔マップ（首都圏）──">
+      <option value="kjmap_2man">📜 今昔 1896-1909年</option>
+      <option value="kjmap_00">📜 今昔 1917-1924年</option>
+      <option value="kjmap_01">📜 今昔 1927-1939年</option>
+      <option value="kjmap_02">📜 今昔 1944-1954年</option>
+      <option value="kjmap_03">📜 今昔 1965-1968年</option>
+      <option value="kjmap_04">📜 今昔 1975-1978年</option>
+      <option value="kjmap_05">📜 今昔 1986-1989年</option>
+    </optgroup>
+    <optgroup label="── 今昔マップ（京阪神）──">
+      <option value="keihansin_2man">📜 京阪神 1892-1910年</option>
+      <option value="keihansin_00">📜 京阪神 1922-1923年</option>
+      <option value="keihansin_01">📜 京阪神 1927-1935年</option>
+      <option value="keihansin_02">📜 京阪神 1947-1950年</option>
+      <option value="keihansin_03">📜 京阪神 1954-1956年</option>
+      <option value="keihansin_04">📜 京阪神 1961-1964年</option>
+      <option value="keihansin_05">📜 京阪神 1967-1970年</option>
+      <option value="keihansin_06">📜 京阪神 1975-1979年</option>
+      <option value="keihansin_07">📜 京阪神 1983-1988年</option>
+      <option value="keihansin_08">📜 京阪神 1993-1997年</option>
+    </optgroup>
+    <optgroup label="── 今昔マップ（中京）──">
+      <option value="chukyo_2man">📜 中京 1888-1898年</option>
+      <option value="chukyo_00">📜 中京 1920年</option>
+      <option value="chukyo_01">📜 中京 1932年</option>
+      <option value="chukyo_02">📜 中京 1937-1938年</option>
+      <option value="chukyo_03">📜 中京 1947年</option>
+      <option value="chukyo_04">📜 中京 1959-1960年</option>
+      <option value="chukyo_05">📜 中京 1968-1973年</option>
+      <option value="chukyo_06">📜 中京 1976-1980年</option>
+      <option value="chukyo_07">📜 中京 1984-1989年</option>
+      <option value="chukyo_08">📜 中京 1992-1996年</option>
+    </optgroup>
+    <optgroup label="── 今昔マップ（広島）──">
+      <option value="hiroshima_2man">📜 広島 1894-1899年</option>
+      <option value="hiroshima_01">📜 広島 1925-1932年</option>
+      <option value="hiroshima_02">📜 広島 1950-1954年</option>
+      <option value="hiroshima_03">📜 広島 1967-1969年</option>
+      <option value="hiroshima_04">📜 広島 1984-1990年</option>
+      <option value="hiroshima_05">📜 広島 1992-2001年</option>
+    </optgroup>
+    <optgroup label="── 今昔マップ（札幌）──">
+      <option value="sapporo_00">📜 札幌 1916年</option>
+      <option value="sapporo_01">📜 札幌 1935年</option>
+      <option value="sapporo_02">📜 札幌 1950-1952年</option>
+      <option value="sapporo_04">📜 札幌 1975-1976年</option>
+      <option value="sapporo_05">📜 札幌 1995-1998年</option>
+    </optgroup>
+    <optgroup label="── 今昔マップ（仙台）──">
+      <option value="sendai_01">📜 仙台 1928-1933年</option>
+      <option value="sendai_02">📜 仙台 1946年</option>
+      <option value="sendai_03">📜 仙台 1963-1967年</option>
+      <option value="sendai_04">📜 仙台 1977-1978年</option>
+      <option value="sendai_05">📜 仙台 1995-2000年</option>
+    </optgroup>
+    <optgroup label="── 今昔マップ（福岡・北九州）──">
+      <option value="fukuoka_01">📜 福岡 1922-1926年</option>
+      <option value="fukuoka_02">📜 福岡 1936-1938年</option>
+      <option value="fukuoka_03">📜 福岡 1948-1956年</option>
+      <option value="fukuoka_04">📜 福岡 1967-1972年</option>
+      <option value="fukuoka_05">📜 福岡 1982-1986年</option>
+      <option value="fukuoka_06">📜 福岡 1991-2000年</option>
+    </optgroup>
+  </select>
+  <input type="range" id="tileOpacity" min="0" max="1" step="0.05" value="1"
+    style="width:70px;cursor:pointer;accent-color:#6688ff;vertical-align:middle;"
+    oninput="changeTileOpacity(this.value)"
+    title="地図のこさ">
+  <span class="sep">│</span>
   <label>表示カテゴリ：</label>
   <div class="cat-toggle">
     <button class="cat-btn on green"  id="catBuilding" onclick="toggleCat('catBuilding')">🏢 建物</button>
-    <button class="cat-btn on blue"   id="catStation"  onclick="toggleCat('catStation')">🚉 駅</button>
+    <button class="cat-btn on"        id="catStation"  onclick="toggleCat('catStation')">🚉 駅</button>
     <button class="cat-btn on orange" id="catBusStop"  onclick="toggleCat('catBusStop')">🚌 バス停</button>
     <button class="cat-btn on purple" id="catTown"     onclick="toggleCat('catTown')">🏘 町名</button>
     <button class="cat-btn"           id="catRoute"    onclick="toggleCat('catRoute')">🗺 路線</button>
@@ -656,9 +650,6 @@ const TILES = {
   gsipale:  L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', { attribution: '© 国土地理院', maxZoom: 18 }),
   gsirelief:L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/relief/{z}/{x}/{y}.png', { attribution: '© 国土地理院', maxZoom: 15 }),
   gsiphoto: L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', { attribution: '© 国土地理院', maxZoom: 18 }),
-  esri_satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 }),
-  esri_topo:     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 }),
-  opentopomap:   L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: '© OpenTopoMap', maxZoom: 17 }),
   kjmap_2man: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/2man/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
   kjmap_00:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/00/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
   kjmap_01:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/01/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
@@ -666,6 +657,9 @@ const TILES = {
   kjmap_03:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/03/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
   kjmap_04:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/04/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
   kjmap_05:   L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/tokyo50/05/{z}/{x}/{-y}.png',   { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
+  esri_satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 }),
+  esri_topo:     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 }),
+  opentopomap:   L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: '© OpenTopoMap', maxZoom: 17 }),
   keihansin_2man: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/keihansin/2man/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
   keihansin_00: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/keihansin/00/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
   keihansin_01: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/keihansin/01/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
@@ -723,24 +717,9 @@ function changeTile() {
   TILES[currentTile].setOpacity(1);
 }
 
-function changeTileOpacity(val) {
-  TILES[currentTile].setOpacity(parseFloat(val));
-}
-
 function showOpacitySlider() {}
 function changeOverlay() {}
 function updateOverlayOpacity() {}
-
-// キーワドマッチ（^前方一致・$後方一致・両方で完全一致・なしで部分一致）
-function matchKeyword(name, word) {
-  const fw = word.startsWith('^');
-  const bw = word.endsWith('$');
-  const w = word.replace(/^\^/, '').replace(/\$$/, '');
-  if (fw && bw) return name === w;
-  if (fw)       return name.startsWith(w);
-  if (bw)       return name.endsWith(w);
-  return name.includes(w);
-}
 
 const markerLayer = L.layerGroup().addTo(map);
 
@@ -1073,7 +1052,7 @@ function filterAndShow() {
 
   // キーワドにマッチするものだけしぼる
   allBuildings = areaCache.filter(b => {
-    b.matched = keywords.filter(kw => matchKeyword(b.name, kw.word));
+    b.matched = keywords.filter(kw => b.name.includes(kw.word));
     return b.matched.length > 0;
   });
 
@@ -1181,13 +1160,13 @@ async function fetchGoogle(r) {
       }
       for (const place of (data.places || [])) {
         const name = place.displayName?.text || '';
-        if (!matchKeyword(name, kw.word)) continue; // 名前にキーワドふくまないものはのぞく
+        if (!name.includes(kw.word)) continue; // 名前にキーワドふくまないものはのぞく
         const lat = place.location?.latitude;
         const lng = place.location?.longitude;
         if (!lat || !lng) continue;
         // かさなりチェック
         if (allBuildings.find(b => b.name === name && Math.abs(b.lat-lat)<0.0001)) continue;
-        const matched = keywords.filter(k => matchKeyword(name, k.word));
+        const matched = keywords.filter(k => name.includes(k.word));
         allBuildings.push({
           id: 'g_' + totalFound++,
           name, lat, lng, matched,
@@ -1243,26 +1222,18 @@ function processElements(elements, source) {
 }
 
 // ===== RENDER =====
-function toggleCat(id) {
-  const btn = document.getElementById(id);
-  btn.classList.toggle('on');
-  classifyAndRender();
-}
-function catOn(id) { return document.getElementById(id).classList.contains('on'); }
-
 function isFiltered(b) {
   if (b.isTown    && !catOn('catTown'))     return true;
   if (b.isBusStop && !catOn('catBusStop'))  return true;
   if (b.isStation && !catOn('catStation'))  return true;
   if (b.isRoute   && !catOn('catRoute'))    return true;
   if (b.isRoad    && !catOn('catRoad'))     return true;
-  // 建物・施設（上記どれでもないもの）
   if (!b.isTown && !b.isBusStop && !b.isStation && !b.isRoute && !b.isRoad && !catOn('catBuilding')) return true;
   return false;
 }
 
 function classifyAndRender() {
-  for (const b of allBuildings) b.matched = keywords.filter(kw => matchKeyword(b.name, kw.word));
+  for (const b of allBuildings) b.matched = keywords.filter(kw => b.name.includes(kw.word));
   const visible = allBuildings.filter(b => !isFiltered(b));
   const hidden  = allBuildings.length - visible.length;
   document.getElementById('filterCount').textContent =
@@ -1355,6 +1326,30 @@ function setStatus(msg, loading=false) {
 }
 
 // ===== 共有リンク =====
+function setRadius(r) {
+  document.getElementById('radius').value = r;
+}
+
+function changeTileOpacity(val) {
+  TILES[currentTile].setOpacity(parseFloat(val));
+}
+
+function toggleCat(id) {
+  document.getElementById(id).classList.toggle('on');
+  classifyAndRender();
+}
+function catOn(id) { return document.getElementById(id).classList.contains('on'); }
+
+function matchKeyword(name, word) {
+  const fw = word.startsWith('^');
+  const bw = word.endsWith('$');
+  const w = word.replace(/^\^/, '').replace(/\$$/, '');
+  if (fw && bw) return name === w;
+  if (fw)       return name.startsWith(w);
+  if (bw)       return name.endsWith(w);
+  return name.includes(w);
+}
+
 function shareLink() {
   if (keywords.length === 0) { setStatus('キーワドがないデス！'); return; }
   if (centerLat === null)    { setStatus('中心点がないデス！'); return; }

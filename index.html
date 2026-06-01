@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.9.7</title>
+<title>建物名 地名マップ v2.9.8</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -386,6 +386,10 @@ body.map-maxed .main { flex: 1 !important; height: 100% !important; flex-directi
 body.map-maxed #map { flex: 1 !important; width: 100% !important; height: 100% !important; }
 #mapMaxExit { position: fixed; top: 12px; right: 12px; z-index: 1200; display: none; font-size: 12px; padding: 6px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
 body.map-maxed #mapMaxExit { display: inline-flex; align-items: center; }
+#mapCaptureFloat { position: fixed; top: 12px; right: 138px; z-index: 1200; display: none; font-size: 12px; padding: 6px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+body.map-maxed #mapCaptureFloat { display: inline-flex; align-items: center; }
+#capToast { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 1300; background: rgba(20,20,40,0.95); color: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 8px 16px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+#capToast.show { opacity: 1; }
 </style>
 </head>
 <body>
@@ -452,7 +456,7 @@ body.map-maxed #mapMaxExit { display: inline-flex; align-items: center; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.7</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.8</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -613,6 +617,7 @@ body.map-maxed #mapMaxExit { display: inline-flex; align-items: center; }
 
 <div class="main">
   <div id="map"></div>
+  <button class="btn" id="mapCaptureFloat" onclick="captureMap()">📷 画像保存</button>
   <button class="btn" id="mapMaxExit" onclick="toggleMapMax()">🗗 地図もどす</button>
 
   <!-- ローディングオーバーレイ -->
@@ -1373,15 +1378,15 @@ function matchKeyword(name, word) {
 
 // 📷 現在の地図ビューを画像(PNG)で保存。＋－ズームボタンは撮影から除外する。
 async function captureMap() {
-  const btn = document.getElementById('captureBtn');
+  const btns = ['captureBtn','mapCaptureFloat'].map(function(id){ return document.getElementById(id); }).filter(Boolean);
   const mapEl = document.getElementById('map');
   if (typeof htmlToImage === 'undefined' || !htmlToImage) {
     setStatus('画像ライブラリがよみこめてないデス！通信かくにんしてネ');
+    capToast('画像ライブラリがよみこめてないデス！');
     return;
   }
-  const origLabel = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '📷 撮影中…';
+  const origs = btns.map(function(b){ return b.innerHTML; });
+  btns.forEach(function(b){ b.disabled = true; b.innerHTML = '📷 撮影中…'; });
   if (map) map.closePopup();
   try {
     const blob = await htmlToImage.toBlob(mapEl, {
@@ -1406,13 +1411,25 @@ async function captureMap() {
     document.body.removeChild(a);
     setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
     setStatus('画像をほぞんしたデス！📷');
+    capToast('画像をほぞんしたデス！📷');
   } catch (e) {
     console.error('capture failed:', e);
     setStatus('撮影しっぱいデス…今昔マップは非対応かも。ふつうの地図でためしてネ');
+    capToast('撮影しっぱい…ふつうの地図でためしてネ');
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = origLabel;
+    btns.forEach(function(b,i){ b.disabled = false; b.innerHTML = origs[i]; });
   }
+}
+
+// 画面上にちょっとだけ出るおしらせ（地図ひろげ中はステータスバーが見えないため）
+let _capToastTimer = null;
+function capToast(msg) {
+  const t = document.getElementById('capToast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  if (_capToastTimer) clearTimeout(_capToastTimer);
+  _capToastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2200);
 }
 
 // ⛶ 地図をページ内でめいっぱい表示（上のバー・サイドバーをかくす）。トグル式。
@@ -1546,5 +1563,6 @@ function clearAll() {
 const restoredFromURL = restoreFromURL();
 if (!restoredFromURL) getGPS();
 </script>
+<div id="capToast"></div>
 </body>
 </html>

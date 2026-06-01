@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.9.5</title>
+<title>建物名 地名マップ v2.9.6</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.min.js"></script>
+<script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -421,6 +422,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
         <li>今昔マップを選べ。明治・大正・昭和の地図がお前の前に現れる。</li>
         <li>スライダで地図を薄くしろ。点だけが浮かび上がる。それでいい。</li>
         <li>「🔗 共有リンク」で仲間に送れ。お前の発見を、独り占めにするな。</li>
+        <li>「📷 画像保存」を押せ。今この瞬間の地図が、一枚の絵となってお前の手に降りてくる。ズームボタンは消える。点だけが、記憶として残る。（ふつうの地図で使え。今昔マップは応えぬことがある）</li>
         <li>キーワードの頭に <strong>^</strong> をつけると前方一致（例：^田）。末尾に <strong>$</strong> をつけると後方一致（例：田$）。両方つけると完全一致。</li>
       </ul>
       <p style="margin-top:14px;">次回、地名 BUILD MAP！『検索！地名秘孔の謎！！』</p>
@@ -439,7 +441,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.5</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.6</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -455,6 +457,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
     </div>
     <span class="sep">│</span>
     <button class="btn" id="shareBtn" onclick="shareLink()" style="font-size:11px;padding:5px 12px;">🔗 共有リンク</button>
+    <button class="btn" id="captureBtn" onclick="captureMap()" style="font-size:11px;padding:5px 12px;">📷 画像保存</button>
     <button class="btn" onclick="document.getElementById('helpModal').classList.add('on')" style="font-size:13px;padding:4px 10px;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">？</button>
   </div>
 </header>
@@ -703,6 +706,11 @@ const TILES = {
   fukuoka_05: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/fukuoka/05/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
   fukuoka_06: L.tileLayer('https://ktgis.net/kjmapw/kjtilemap/fukuoka/06/{z}/{x}/{-y}.png', { attribution: '© <a href="https://ktgis.net/kjmapw/" target="_blank">今昔マップ on the web</a>（埼玉大学 谷謙二）', maxZoom: 16, minZoom: 8 }),
 };
+// 画像保存(html-to-image)でタイルがよごれないよう、CORS対応タイルにcrossOriginをつける
+// ※今昔マップ(ktgis)はCORS非対応のためつけない（つけるとタイルが読み込めなくなる）
+['osm','white','dark','gsi','gsipale','gsirelief','gsiphoto','esri_satellite','esri_topo','opentopomap'].forEach(function(k){
+  if (TILES[k]) TILES[k].options.crossOrigin = 'anonymous';
+});
 TILES.white.addTo(map);
 let currentTile = 'white';
 
@@ -1348,6 +1356,50 @@ function matchKeyword(name, word) {
   if (fw)       return name.startsWith(w);
   if (bw)       return name.endsWith(w);
   return name.includes(w);
+}
+
+// 📷 現在の地図ビューを画像(PNG)で保存。＋－ズームボタンは撮影から除外する。
+async function captureMap() {
+  const btn = document.getElementById('captureBtn');
+  const mapEl = document.getElementById('map');
+  if (typeof htmlToImage === 'undefined' || !htmlToImage) {
+    setStatus('画像ライブラリがよみこめてないデス！通信かくにんしてネ');
+    return;
+  }
+  const origLabel = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '📷 撮影中…';
+  if (map) map.closePopup();
+  try {
+    const blob = await htmlToImage.toBlob(mapEl, {
+      pixelRatio: 2,
+      // ＋－ズームコントロールは撮影から除外（画面はそのまま、ちらつかない）
+      filter: function(node) {
+        if (node.classList && node.classList.contains('leaflet-control-zoom')) return false;
+        return true;
+      }
+    });
+    if (!blob) throw new Error('blob is null');
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const now = new Date();
+    const pad = function(n){ return String(n).padStart(2,'0'); };
+    const ts = '' + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate())
+             + '_' + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+    a.href = url;
+    a.download = 'chimei-build-map_' + ts + '.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+    setStatus('画像をほぞんしたデス！📷');
+  } catch (e) {
+    console.error('capture failed:', e);
+    setStatus('撮影しっぱいデス…今昔マップは非対応かも。ふつうの地図でためしてネ');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origLabel;
+  }
 }
 
 function shareLink() {

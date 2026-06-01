@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.9.9</title>
+<title>建物名 地名マップ v2.9.10</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -394,7 +394,6 @@ body.map-maxed #legendBtnFloat { display: inline-flex; align-items: center; }
 #capToast.show { opacity: 1; }
 /* === v2.9.9 凡例（はんれい）ボックス === */
 .map-legend { background: rgba(255,255,255,0.93); color: #222; padding: 8px 11px; border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,0.3); font-family: 'Noto Sans JP', sans-serif; font-size: 12px; line-height: 1.5; max-width: 220px; }
-.legend-title { font-weight: 700; font-size: 10px; letter-spacing: 1px; margin-bottom: 5px; color: #666; }
 .legend-row { display: flex; align-items: center; gap: 7px; margin-top: 2px; }
 .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.25); }
 .legend-label { white-space: nowrap; color: #222; }
@@ -466,7 +465,7 @@ body.map-maxed #legendBtnFloat { display: inline-flex; align-items: center; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.9</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.10</span>
   <div class="area-settings">
     <label>半径</label>
     <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
@@ -1454,10 +1453,6 @@ function renderLegend() {
   const c = legendControl.getContainer();
   if (!c) return;
   c.innerHTML = '';
-  const title = document.createElement('div');
-  title.className = 'legend-title';
-  title.textContent = '凡例';
-  c.appendChild(title);
   const ks = keywords.filter(function(k){ return k.enabled; });
   if (ks.length === 0) {
     const e = document.createElement('div');

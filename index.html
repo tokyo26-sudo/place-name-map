@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.9.14</title>
+<title>建物名 地名マップ v2.9.15</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -405,7 +405,7 @@ body.map-maxed #legendBtnFloat { display: inline-flex; align-items: center; }
 /* 表示カテゴリを1かたまりに（途中で行が割れない） */
 .cat-section { display:inline-flex; align-items:center; gap:8px; flex-wrap:nowrap; }
 /* 地図の上にのせるコントロール（座標=左上／地図切替＆濃さ=右上）。撮影には写さない */
-.map-coord-ctrl-wrap { background:rgba(255,255,255,0.75); border-radius:3px; padding:0 6px; }
+.map-coord-ctrl-wrap { background:rgba(255,255,255,0.75); border-radius:3px; padding:0 6px; margin-bottom:1px !important; }
 .map-coord-ctrl-wrap .center-info { font-size:10px; margin:0; }
 .map-coord-ctrl-wrap .center-info span { color:#333; font-weight:600; }
 .map-tile-ctrl { display:flex; flex-direction:column; gap:5px; }
@@ -482,7 +482,7 @@ body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.14</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.15</span>
   <div class="area-settings">
     <button class="btn" id="shareBtn" onclick="shareLink()" style="font-size:11px;padding:5px 12px;">🔗 共有リンク</button>
     <button class="btn" id="captureBtn" onclick="captureMap()" style="font-size:11px;padding:5px 12px;">📷 画像保存</button>
@@ -797,6 +797,44 @@ let currentTile = 'white';
   tileCtrlL.addTo(map);
 })();
 
+// v2.9.15: 中心座標の表示＋逆ジオコーディング（Nominatim・キー不要・日本語ゆうせん）
+let _revGeoTimer = null;
+let _centerCoordText = '';
+// 座標テキストを表示し、必要なら少し待ってから地名を逆引きして「／◯◯ 付近」を足す
+function showCenterCoord(coordText, lat, lng, doReverse) {
+  _centerCoordText = coordText;
+  const el = document.getElementById('centerDisplay');
+  if (el) el.textContent = coordText;
+  if (_revGeoTimer) clearTimeout(_revGeoTimer);
+  if (doReverse && lat != null && lng != null) {
+    // クリック連打対策：1秒待ってから1回だけ呼ぶ（Nominatimは1秒1回まで）
+    _revGeoTimer = setTimeout(function(){ reverseGeocode(lat, lng, coordText); }, 1000);
+  }
+}
+async function reverseGeocode(lat, lng, forText) {
+  try {
+    const url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=16&addressdetails=1&accept-language=ja'
+              + '&lat=' + encodeURIComponent(lat) + '&lon=' + encodeURIComponent(lng);
+    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) return;
+    const data = await res.json();
+    // 連打で古い結果が新しい表示を上書きしないよう、今の座標と一致するときだけ反映
+    if (_centerCoordText !== forText) return;
+    const place = pickPlaceName(data);
+    const el = document.getElementById('centerDisplay');
+    if (el && place) el.textContent = forText + '／' + place + ' 付近';
+  } catch (e) {
+    // 逆引き失敗は無視（座標だけ表示のまま）
+  }
+}
+// いちばんこまかい地名をひろう
+function pickPlaceName(data) {
+  if (!data) return '';
+  if (data.name && data.name.trim()) return data.name.trim();
+  if (data.display_name) return data.display_name.split(',')[0].trim();
+  return '';
+}
+
 function changeTile() {
   const val = document.getElementById('tileSelect').value;
   if (val === currentTile) return;
@@ -854,9 +892,10 @@ function setCenter(lat, lng, label) {
   centerMarker = L.marker([lat, lng], { icon: centerIcon, zIndexOffset: 1000 })
     .bindTooltip(label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`, { permanent: false });
   if (centerPinVisible) centerMarker.addTo(map);
-  document.getElementById('centerDisplay').textContent = label
+  const _ct = label
     ? `${label} (${lat.toFixed(4)}, ${lng.toFixed(4)})`
     : `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  showCenterCoord(_ct, lat, lng, !label);
 }
 
 // ===== ヒントのフェードアウト =====
@@ -1124,8 +1163,7 @@ function flyToAreaCenter() {
   }
   centerLat = areaCacheInfo.lat;
   centerLng = areaCacheInfo.lng;
-  document.getElementById('centerDisplay').textContent =
-    `${areaCacheInfo.lat.toFixed(4)}, ${areaCacheInfo.lng.toFixed(4)}`;
+  showCenterCoord(`${areaCacheInfo.lat.toFixed(4)}, ${areaCacheInfo.lng.toFixed(4)}`, areaCacheInfo.lat, areaCacheInfo.lng, true);
 }
 
 
@@ -1628,7 +1666,7 @@ function restoreFromURL() {
         .bindTooltip(`${lat.toFixed(4)}, ${lng.toFixed(4)}`)
         .addTo(map);
     }
-    document.getElementById('centerDisplay').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    showCenterCoord(`${lat.toFixed(4)}, ${lng.toFixed(4)}`, lat, lng, true);
   }
 
   // 半径

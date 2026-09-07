@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.9.11</title>
+<title>建物名 地名マップ v2.9.12</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -47,7 +47,7 @@ h1 {
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   white-space: nowrap;
 }
-.area-settings { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.area-settings { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: auto; }
 .area-settings label { font-size: 11px; color: var(--muted); white-space: nowrap; }
 input[type="text"], input[type="number"] {
   background: #1a1a2a;
@@ -465,21 +465,8 @@ body.map-maxed #legendBtnFloat { display: inline-flex; align-items: center; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.11</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.12</span>
   <div class="area-settings">
-    <label>半径</label>
-    <input type="number" id="radius" value="2000" min="100" max="20000" style="width:65px">
-    <label>m</label>
-    <button class="btn" onclick="setRadius(2000)" style="font-size:11px;padding:3px 8px;">2km</button>
-    <button class="btn" onclick="setRadius(5000)" style="font-size:11px;padding:3px 8px;">5km</button>
-    <button class="btn" onclick="setRadius(10000)" style="font-size:11px;padding:3px 8px;">10km</button>
-    <span class="sep">│</span>
-    <label>データ：</label>
-    <div class="source-toggle">
-      <button class="src-btn active" id="srcOsm" onclick="setSource('osm')">OSM</button>
-      <button class="src-btn" id="srcGoogle" onclick="setSource('google')">Google Places</button>
-    </div>
-    <span class="sep">│</span>
     <button class="btn" id="shareBtn" onclick="shareLink()" style="font-size:11px;padding:5px 12px;">🔗 共有リンク</button>
     <button class="btn" id="captureBtn" onclick="captureMap()" style="font-size:11px;padding:5px 12px;">📷 画像保存</button>
     <button class="btn" id="maxBtn" onclick="toggleMapMax()" style="font-size:11px;padding:5px 12px;">⛶ 地図ひろげる</button>
@@ -497,6 +484,21 @@ body.map-maxed #legendBtnFloat { display: inline-flex; align-items: center; }
   <button class="btn" onclick="searchAddress()">検索</button>
   <span class="sep">│</span>
   <button class="btn" id="centerPinBtn" onclick="toggleCenterPin()" style="font-size:11px;padding:4px 10px;">📌 中心ピン ON</button>
+  <span class="sep">│</span>
+  <label>範囲：</label>
+  <input type="number" id="radius" value="2000" min="100" max="20000" style="width:60px">
+  <label>m</label>
+  <button class="btn" onclick="setRadius(2000)" style="font-size:11px;padding:3px 8px;">2km</button>
+  <button class="btn" onclick="setRadius(5000)" style="font-size:11px;padding:3px 8px;">5km</button>
+  <button class="btn" onclick="setRadius(10000)" style="font-size:11px;padding:3px 8px;">10km</button>
+  <!-- データ源トグル：現在は非表示（Google Places対応時に display を戻せば復活） -->
+  <span class="source-wrap" id="sourceWrap" style="display:none;">
+    <label>データ：</label>
+    <div class="source-toggle">
+      <button class="src-btn active" id="srcOsm" onclick="setSource('osm')">OSM</button>
+      <button class="src-btn" id="srcGoogle" onclick="setSource('google')">Google Places</button>
+    </div>
+  </span>
   <span class="sep">│</span>
   <button class="btn" id="areaBtn" onclick="fetchAreaData()" style="background:#0a2a10;border-color:#2a6a3a;color:#66dd88;font-weight:700;padding:5px 14px;">📥 エリアデータ取得</button>
   <button class="btn" id="areaFlyBtn" onclick="flyToAreaCenter()" style="font-size:11px;padding:4px 10px;display:none;">📦 取得エリアへ</button>

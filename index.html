@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.9.25</title>
+<title>建物名 地名マップ v2.9.26</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -138,6 +138,13 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 .chip-del:hover { opacity: 1; }
 .chip { cursor: grab; }
 .chip.dragging { opacity: .45; cursor: grabbing; }
+/* v2.9.26 除外ワード */
+.exclude-group { display:flex; align-items:center; gap:6px; }
+.ex-chips { display:flex; gap:5px; flex-wrap:wrap; }
+.ex-chip { display:inline-flex; align-items:center; gap:4px; font-size:12px; padding:3px 9px; border-radius:20px;
+  background:#2a2a2a; color:#bbb; border:1.5px solid #555; white-space:nowrap; }
+.ex-chip .ex-del { cursor:pointer; opacity:.6; font-size:10px; }
+.ex-chip .ex-del:hover { opacity:1; color:#ff6666; }
 .add-kw-group { display: flex; gap: 6px; align-items: center; }
 
 /* カラーパレット */
@@ -504,7 +511,7 @@ body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.25</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.26</span>
   <div class="area-settings">
     <button class="btn" id="shareBtn" onclick="shareLink()" style="font-size:11px;padding:5px 12px;">🔗 共有リンク</button>
     <button class="btn" id="captureBtn" onclick="captureMap()" style="font-size:11px;padding:5px 12px;">📷 画像保存</button>
@@ -678,6 +685,14 @@ body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
       style="width:0;height:0;opacity:0;position:absolute"
       oninput="onCustomColor(this.value)">
   </div>
+  <span style="color:var(--border);margin:0 4px;">│</span>
+  <div class="exclude-group">
+    <label style="font-size:11px;color:var(--muted);white-space:nowrap;">🚫除外：</label>
+    <div class="ex-chips" id="exChips"></div>
+    <input type="text" id="exInput" placeholder="除外ワード…" style="width:90px" autocomplete="off"
+      onkeydown="if(event.key==='Enter')addExclude()">
+    <button class="btn" onclick="addExclude()" style="padding:4px 10px;font-size:12px;">＋</button>
+  </div>
 </div>
 
 <div class="main">
@@ -740,6 +755,8 @@ function nextAutoColor() {
   return AUTO_COLORS[keywords.length % AUTO_COLORS.length];
 }
 let keywords = [];
+let excludeWords = []; // 除外ワード（これを含む地物は消す）
+function isExcluded(name) { return excludeWords.some(w => w && name.includes(w)); }
 let allBuildings = [];
 let markerRefs = {};
 let centerLat = null, centerLng = null;
@@ -1044,6 +1061,7 @@ document.addEventListener('click', function(e) {
   }
 });
 initPalette();
+renderExcludeChips();
 
 // ===== KEYWORD =====
 function addKeyword() {
@@ -1082,6 +1100,33 @@ function renderChips() {
     </div>
   `).join('');
   if (legendVisible) renderLegend();
+}
+
+// 除外ワード：登録した語を含む地物を全キーワドから消す
+function renderExcludeChips() {
+  const area = document.getElementById('exChips');
+  if (!area) return;
+  area.innerHTML = excludeWords.map((w, i) =>
+    `<span class="ex-chip">🚫 ${w}<span class="ex-del" onclick="removeExclude(${i})">✕</span></span>`
+  ).join('');
+}
+function reapplyFilter() {
+  if (areaCache.length && keywords.length) filterAndShow();
+  else classifyAndRender();
+}
+function addExclude() {
+  const inp = document.getElementById('exInput');
+  const w = inp.value.trim();
+  if (!w) return;
+  if (!excludeWords.includes(w)) excludeWords.push(w);
+  inp.value = '';
+  renderExcludeChips();
+  reapplyFilter();
+}
+function removeExclude(i) {
+  excludeWords.splice(i, 1);
+  renderExcludeChips();
+  reapplyFilter();
 }
 
 // チップのドラッグ並べ替え（PCのみ。スマホのタッチでは発動しないので影響なし）
@@ -1310,14 +1355,16 @@ function filterAndShow() {
     return;
   }
 
-  // キーワドにマッチするものだけしぼる
+  // キーワドにマッチし、かつ除外ワードを含まないものだけしぼる
   allBuildings = areaCache.filter(b => {
+    if (isExcluded(b.name)) return false;
     b.matched = keywords.filter(kw => b.name.includes(kw.word));
     return b.matched.length > 0;
   });
 
   classifyAndRender();
-  setStatus(`${allBuildings.length}件ヒットしたヨ！（${areaCache.length}件中）`);
+  const exMsg = excludeWords.length ? `／除外${excludeWords.length}語` : '';
+  setStatus(`${allBuildings.length}件ヒットしたヨ！（${areaCache.length}件中${exMsg}）`);
 }
 
 // 後方互換のためfetchDataはfilterAndShowにリダイレクト
@@ -1818,6 +1865,7 @@ function saveAreaCache() {
     center: { lat: areaCacheInfo.lat, lng: areaCacheInfo.lng, name: nm },
     radiusM: areaCacheInfo.r, count: areaCache.length,
     keywords: keywords.map(k => ({ id: k.id, word: k.word, color: k.color, enabled: k.enabled })),
+    excludeWords: excludeWords.slice(),
     data: areaCache
   };
   const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
@@ -1854,6 +1902,9 @@ function loadAreaCache(file) {
         c.name ? `${lat.toFixed(4)}, ${lng.toFixed(4)}／${c.name} 付近` : `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
         lat, lng, !c.name
       );
+      // 除外ワードも復元
+      excludeWords = Array.isArray(j.excludeWords) ? j.excludeWords.slice() : [];
+      renderExcludeChips();
       // キーワドも保存されていれば復元して自動検索
       if (Array.isArray(j.keywords) && j.keywords.length) {
         keywords = j.keywords.map(k => ({

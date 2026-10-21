@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.9.17</title>
+<title>建物名 地名マップ v2.9.19</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -155,6 +155,17 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
   transition: transform 0.1s; flex-shrink: 0; font-size: 0;
 }
 .palette-custom:hover { transform: scale(1.2); }
+/* v2.9.19 パレット（ポチッ式ポップアップ） */
+.palette-wrap { position:relative; display:flex; align-items:center; }
+.palette-current { width:22px; height:22px; border-radius:50%; border:2px solid #fff; cursor:pointer; padding:0; flex-shrink:0; box-shadow:0 0 0 1px var(--border); }
+.palette-current:hover { transform:scale(1.1); }
+.palette-pop { position:absolute; top:28px; right:0; z-index:600; display:none; grid-template-columns:repeat(6,22px); gap:7px; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:10px; box-shadow:0 8px 24px rgba(0,0,0,0.5); }
+.palette-pop.open { display:grid; }
+.palette-pop .pdot { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:transform .1s; }
+.palette-pop .pdot:hover { transform:scale(1.2); }
+.palette-pop .pdot.sel { border-color:#fff; }
+.palette-pop .pcustom { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid var(--border); background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red); }
+.palette-pop .pcustom:hover { transform:scale(1.2); }
 
 .filter-bar {
   padding: 6px 16px;
@@ -408,13 +419,21 @@ body.map-maxed #legendBtnFloat { display: inline-flex; align-items: center; }
 .map-coord-ctrl-wrap { background:rgba(255,255,255,0.75); border-radius:3px; padding:0 6px; margin-bottom:1px !important; }
 .map-coord-ctrl-wrap .center-info { font-size:10px; margin:0; }
 .map-coord-ctrl-wrap .center-info span { color:#333; font-weight:600; }
-.map-tile-ctrl { display:flex; flex-direction:column; gap:5px; }
+.map-tile-ctrl { display:flex; flex-direction:column; gap:5px; align-items:flex-end; }
 .map-tile-ctrl label { display:none; }
 .map-tile-ctrl select { max-width:180px; }
 .map-tile-ctrl input[type="range"] { width:100%; }
-.map-tile-ctrl-wrap { background:rgba(20,20,35,0.92); border:1px solid var(--border); border-radius:8px; padding:7px 9px; box-shadow:0 2px 8px rgba(0,0,0,0.4); }
+.map-tile-ctrl-wrap { background:transparent; border:none; box-shadow:none; }
+.tile-toggle { background:rgba(20,20,35,0.92); border:1px solid var(--border); border-radius:8px; width:34px; height:34px; font-size:16px; line-height:1; padding:0; cursor:pointer; color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; }
+.tile-toggle:hover { border-color:#6688ff; }
+.map-tile-ctrl .tile-body { display:none; background:rgba(20,20,35,0.92); border:1px solid var(--border); border-radius:8px; padding:7px 9px; box-shadow:0 2px 8px rgba(0,0,0,0.4); flex-direction:column; gap:5px; }
+.map-tile-ctrl.open .tile-body { display:flex; }
 /* 地図ひろげ時、右上ツール（📷🏷🗗）とかぶらないよう地図切替を下へずらす */
 body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
+/* v2.9.19 受信バー */
+.load-bar { width:220px; max-width:60vw; height:6px; background:rgba(255,255,255,0.12); border-radius:4px; margin:14px auto 5px; overflow:hidden; }
+.load-bar-fill { height:100%; width:0; background:linear-gradient(90deg,#4488ff,#66dd88); border-radius:4px; transition:width .2s ease; }
+.load-bytes { font-size:11px; color:var(--muted); text-align:center; min-height:14px; }
 </style>
 </head>
 <body>
@@ -482,7 +501,7 @@ body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.17</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.19</span>
   <div class="area-settings">
     <button class="btn" id="shareBtn" onclick="shareLink()" style="font-size:11px;padding:5px 12px;">🔗 共有リンク</button>
     <button class="btn" id="captureBtn" onclick="captureMap()" style="font-size:11px;padding:5px 12px;">📷 画像保存</button>
@@ -504,15 +523,15 @@ body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
   <button class="btn pin-on" id="centerPinBtn" onclick="toggleCenterPin()" style="font-size:11px;padding:4px 10px;">◎ ON</button>
   <span class="sep">│</span>
   <label>範囲：</label>
-  <input type="number" id="radius" value="2000" min="100" max="20000" style="width:60px">
-  <label>m</label>
-  <select id="radiusPreset" onchange="if(this.value)setRadius(parseInt(this.value,10));this.selectedIndex=0;" style="background:#1a1a2a;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:11px;padding:3px 6px;outline:none;cursor:pointer;">
+  <input type="number" id="radius" value="2" min="0.1" max="20" step="0.5" style="width:52px">
+  <label>㌔</label>
+  <select id="radiusPreset" onchange="if(this.value)setRadius(parseFloat(this.value));this.selectedIndex=0;" style="background:#1a1a2a;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:11px;padding:3px 6px;outline:none;cursor:pointer;">
     <option value="">プリセット</option>
-    <option value="500">500m</option>
-    <option value="1000">1km</option>
-    <option value="2000">2km</option>
-    <option value="5000">5km</option>
-    <option value="10000">10km</option>
+    <option value="0.5">0.5㌔</option>
+    <option value="1">1㌔</option>
+    <option value="2">2㌔</option>
+    <option value="5">5㌔</option>
+    <option value="10">10㌔</option>
   </select>
   <!-- データ源トグル：現在は非表示（Google Places対応時に display を戻せば復活） -->
   <span class="source-wrap" id="sourceWrap" style="display:none;">
@@ -525,6 +544,9 @@ body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
   <span class="sep">│</span>
   <button class="btn" id="areaBtn" onclick="fetchAreaData()" style="background:#0a2a10;border-color:#2a6a3a;color:#66dd88;font-weight:700;padding:5px 14px;">📥 エリアデータ取得</button>
   <button class="btn" id="areaFlyBtn" onclick="flyToAreaCenter()" style="font-size:11px;padding:4px 10px;display:none;">📦 取得エリアへ</button>
+  <button class="btn" id="saveCacheBtn" onclick="saveAreaCache()" style="font-size:11px;padding:4px 10px;">💾 保存</button>
+  <button class="btn" id="loadCacheBtn" onclick="document.getElementById('cacheFileInput').click()" style="font-size:11px;padding:4px 10px;">📂 読込</button>
+  <input type="file" id="cacheFileInput" accept=".json,application/json" style="display:none" onchange="loadAreaCache(this.files[0])">
   <span class="sep">│</span>
   
   <span id="areaStatus" style="font-size:11px;color:var(--muted);"></span>
@@ -534,6 +556,8 @@ body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
 <!-- フィルタバー -->
 <div class="filter-bar">
   <div id="tileCtrl" class="map-tile-ctrl">
+  <button type="button" class="tile-toggle" onclick="toggleTileCtrl()" title="地図の種類">🗺</button>
+  <div class="tile-body">
   <label>地図：</label>
   <select id="tileSelect" onchange="changeTile()" style="background:#1a1a2a;border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:12px;padding:4px 8px;outline:none;cursor:pointer;">
     <option value="osm">🗺 カラー地図</option>
@@ -617,6 +641,7 @@ body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
     oninput="changeTileOpacity(this.value)"
     title="地図のこさ">
   </div>
+  </div>
   <span class="cat-section">
   <label>表示カテゴリ：</label>
   <div class="cat-toggle">
@@ -642,8 +667,10 @@ body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
     <input type="text" id="kwInput" placeholder="地名入力…" style="width:100px"
       autocomplete="off">
     <button class="btn go" onclick="addKeyword()" style="padding:5px 12px;font-size:12px;">＋地名追加</button>
-    <div class="palette-area" id="paletteArea"></div>
-    <div class="palette-custom" id="paletteCustom" title="カスタムカラー" onclick="document.getElementById('colorPicker').click()"></div>
+    <div class="palette-wrap">
+      <button type="button" class="palette-current" id="paletteCurrent" onclick="togglePalette()" title="色をえらぶ"></button>
+      <div class="palette-pop" id="palettePop"></div>
+    </div>
     <input type="color" id="colorPicker" value="#e8003d"
       style="width:0;height:0;opacity:0;position:absolute"
       oninput="onCustomColor(this.value)">
@@ -662,6 +689,8 @@ body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
       <div class="big-spinner"></div>
       <div class="loading-title">データ取得中...</div>
       <div class="loading-sub" id="loadingSub">Overpass API によびかけてマス</div>
+      <div class="load-bar"><div class="load-bar-fill" id="loadBarFill"></div></div>
+      <div class="load-bytes" id="loadBytes"></div>
     </div>
   </div>
 
@@ -689,7 +718,12 @@ body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
 </div>
 
 <script>
-const PALETTE = ['#e8003d','#0057e7','#00b86b','#f5a623','#cc44ff','#00ccdd','#ff6600','#cc0099'];
+const PALETTE = [
+  '#e8003d','#ff4d4d','#ff6600','#f5a623','#ffd400','#a8d400',
+  '#00b86b','#00c2a8','#00ccdd','#0088ff','#0057e7','#5b4bff',
+  '#9b30ff','#cc44ff','#ff33cc','#ff6699','#c0392b','#b5651d',
+  '#8b5a2b','#2e8b57','#6a0dad','#e91e63','#009688','#7a7a7a'
+];
 let keywords = [];
 let allBuildings = [];
 let markerRefs = {};
@@ -960,24 +994,40 @@ async function searchAddress() {
 let selectedColor = PALETTE[0];
 
 function initPalette() {
-  const area = document.getElementById('paletteArea');
-  area.innerHTML = PALETTE.map((c, i) => `
-    <div class="palette-dot ${i===0?'selected':''}"
-      style="background:${c}" data-color="${c}"
-      onclick="selectPaletteColor('${c}', this)" title="${c}"></div>
-  `).join('');
+  const pop = document.getElementById('palettePop');
+  if (!pop) return;
+  pop.innerHTML = PALETTE.map(c =>
+    `<div class="pdot" style="background:${c}" data-color="${c}" onclick="selectPaletteColor('${c}')" title="${c}"></div>`
+  ).join('') +
+  `<div class="pcustom" title="カスタムカラー" onclick="document.getElementById('colorPicker').click()"></div>`;
+  updateCurrentSwatch();
 }
-function selectPaletteColor(color, el) {
+function updateCurrentSwatch() {
+  const cur = document.getElementById('paletteCurrent');
+  if (cur) cur.style.background = selectedColor;
+  document.querySelectorAll('#palettePop .pdot').forEach(d =>
+    d.classList.toggle('sel', d.dataset.color === selectedColor));
+}
+function togglePalette() {
+  const pop = document.getElementById('palettePop');
+  if (pop) pop.classList.toggle('open');
+}
+function selectPaletteColor(color) {
   selectedColor = color;
-  document.querySelectorAll('.palette-dot').forEach(d => d.classList.remove('selected'));
-  el.classList.add('selected');
-  document.getElementById('paletteCustom').style.border = '2px solid var(--border)';
+  updateCurrentSwatch();
+  const pop = document.getElementById('palettePop'); if (pop) pop.classList.remove('open');
 }
 function onCustomColor(color) {
   selectedColor = color;
-  document.querySelectorAll('.palette-dot').forEach(d => d.classList.remove('selected'));
-  document.getElementById('paletteCustom').style.border = `2px solid ${color}`;
+  updateCurrentSwatch();
+  const pop = document.getElementById('palettePop'); if (pop) pop.classList.remove('open');
 }
+// パレット外クリックで閉じる
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.palette-wrap')) {
+    const pop = document.getElementById('palettePop'); if (pop) pop.classList.remove('open');
+  }
+});
 initPalette();
 
 // ===== KEYWORD =====
@@ -989,8 +1039,7 @@ function addKeyword() {
   // つぎの色をじどうでえらぶ
   const idx = PALETTE.indexOf(selectedColor);
   const nextIdx = (idx + 1) % PALETTE.length;
-  const nextDot = document.querySelectorAll('.palette-dot')[nextIdx];
-  if (nextDot) selectPaletteColor(PALETTE[nextIdx], nextDot);
+  selectPaletteColor(PALETTE[nextIdx]);
   document.getElementById('kwInput').value = '';
   renderChips();
 }
@@ -1074,7 +1123,7 @@ let areaCacheInfo = null; // どのエリアをとったか
 async function fetchAreaData() {
   if (centerLat === null) { setStatus('先に中心点をきめてクダサイ！'); return; }
 
-  const r = parseInt(document.getElementById('radius').value) || 2000;
+  const r = Math.round((parseFloat(document.getElementById('radius').value) || 2) * 1000); // km入力→m
 
   showLoading(true, `エリアデータ取得中... 半径${(r/1000).toFixed(1)}km`);
   document.getElementById('areaBtn').disabled = true;
@@ -1109,7 +1158,28 @@ out center tags;`;
       const res = await fetch(endpoint, { method:'POST', body: query, signal: controller.signal });
       clearTimeout(timer);
       if (!res.ok) { lastErr = `${label}:HTTP${res.status}`; continue; }
-      const data = await res.json();
+
+      // ⑤ 受信バー：レスポンスをストリームで読んで、届いたバイト数でバーを伸ばす
+      let data;
+      if (res.body && res.body.getReader) {
+        const reader = res.body.getReader();
+        const chunks = []; let received = 0;
+        const fill = document.getElementById('loadBarFill');
+        const bytesEl = document.getElementById('loadBytes');
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value); received += value.length;
+          if (fill) fill.style.width = (100 * (1 - 1 / (1 + received / 3145728))).toFixed(1) + '%';
+          if (bytesEl) bytesEl.textContent = `📥 ${(received / 1048576).toFixed(1)} MB 受信…`;
+        }
+        if (fill) fill.style.width = '100%';
+        const buf = new Uint8Array(received); let off = 0;
+        for (const ch of chunks) { buf.set(ch, off); off += ch.length; }
+        data = JSON.parse(new TextDecoder('utf-8').decode(buf));
+      } else {
+        data = await res.json();
+      }
 
       // 0件チェック（maxsizeオーバーなどでからのけっかがかえってくることがある）
       if (!data.elements || data.elements.length === 0) {
@@ -1396,7 +1466,7 @@ function toggleKyokuColor() {
   }
   if (colorMode === 'kyoku') {
     const withPhone = allBuildings.filter(b => phoneToKyoku(b.phone)).length;
-    setStatus(`局番カラーON：電話ありは ${withPhone}/${allBuildings.length}件（無しはグレー）。0件なら一度エリア取得し直してネ`);
+    setStatus(`局番カラーON：電話なしは非表示、電話ありの ${withPhone}件だけ色分け。0件なら一度エリア取得し直してネ`);
   } else {
     setStatus('キーワド色にもどしたヨ');
   }
@@ -1434,9 +1504,14 @@ function renderMarkers(visible) {
   for (const b of visible) {
     const active = b.matched.filter(kw => kw.enabled);
     if (active.length === 0) continue;
-    const color = (colorMode === 'kyoku')
-      ? kyokuColor(phoneToKyoku(b.phone))
-      : (active.length===1 ? active[0].color : blendColors(active.map(k=>k.color)));
+    let color;
+    if (colorMode === 'kyoku') {
+      const kkey = phoneToKyoku(b.phone);
+      if (!kkey) continue; // 局番カラー中は電話なし(灰色)を非表示
+      color = kyokuColor(kkey);
+    } else {
+      color = active.length===1 ? active[0].color : blendColors(active.map(k=>k.color));
+    }
     const m = L.marker([b.lat, b.lng], { icon: makeIcon(color, active.length>1) })
       .bindPopup(`<div style="font-family:'Noto Sans JP',sans-serif;font-size:12px;min-width:150px;">
         <div style="font-weight:700;font-size:14px;margin-bottom:5px;">${b.name}</div>
@@ -1493,6 +1568,10 @@ function flyTo(uid) {
 function showLoading(on, sub) {
   document.getElementById('loadingOverlay').className = on ? 'on' : '';
   if (sub) document.getElementById('loadingSub').textContent = sub;
+  if (on) {
+    const f = document.getElementById('loadBarFill'); if (f) f.style.width = '0';
+    const b = document.getElementById('loadBytes'); if (b) b.textContent = '';
+  }
 }
 function setStatus(msg, loading=false) {
   document.getElementById('statusTxt').textContent = msg;
@@ -1654,6 +1733,72 @@ document.addEventListener('keydown', function(e){
   }
 });
 
+// ② 地図タイプの折り畳みトグル
+function toggleTileCtrl() {
+  const el = document.getElementById('tileCtrl');
+  if (el) el.classList.toggle('open');
+}
+
+// ① エリアデータの 保存／読み込み（JSON）
+function saveAreaCache() {
+  if (!areaCache.length || !areaCacheInfo) { setStatus('先に「📥 エリアデータ取得」してネ'); return; }
+  let nm = '';
+  const cd = document.getElementById('centerDisplay');
+  if (cd) {
+    const t = cd.textContent || '';
+    nm = (t.split('／')[1] || '').replace(/\s*付近\s*/, '').trim();
+    if (!nm) nm = (t.split('(')[0] || '').trim();
+  }
+  nm = (nm || 'area').replace(/[\\/:*?"<>|\s]+/g, '');
+  const km = (areaCacheInfo.r / 1000);
+  const payload = {
+    app: 'place-name-map', version: '2.9.19', savedAt: new Date().toISOString(),
+    center: { lat: areaCacheInfo.lat, lng: areaCacheInfo.lng, name: nm },
+    radiusM: areaCacheInfo.r, count: areaCache.length, data: areaCache
+  };
+  const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${nm || 'area'}_${km}km.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+  setStatus(`💾 ${areaCache.length}件を ${a.download} に保存したヨ`);
+}
+function loadAreaCache(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const j = JSON.parse(reader.result);
+      const arr = Array.isArray(j) ? j : j.data;
+      if (!Array.isArray(arr) || arr.length === 0) throw new Error('データが空');
+      areaCache = arr;
+      const c = j.center || {};
+      const r = j.radiusM || 2000;
+      const lat = (c.lat != null) ? c.lat : arr[0].lat;
+      const lng = (c.lng != null) ? c.lng : arr[0].lng;
+      areaCacheInfo = { lat, lng, r };
+      centerLat = lat; centerLng = lng;
+      document.getElementById('radius').value = (r / 1000);
+      document.getElementById('areaFlyBtn').style.display = 'inline';
+      map.setView([lat, lng], 13);
+      if (centerPinVisible) {
+        if (centerMarker) map.removeLayer(centerMarker);
+        centerMarker = L.marker([lat, lng], { icon: centerIcon, zIndexOffset: 1000 }).addTo(map);
+      }
+      showCenterCoord(
+        c.name ? `${lat.toFixed(4)}, ${lng.toFixed(4)}／${c.name} 付近` : `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+        lat, lng, !c.name
+      );
+      setStatus(`📂 ${areaCache.length}件を読み込んだヨ！キーワドをいれて🔍検索してネ`);
+    } catch (e) {
+      setStatus('読み込み失敗：' + (e.message || 'このファイルは対応してないカモ'));
+    }
+  };
+  reader.readAsText(file);
+  const inp = document.getElementById('cacheFileInput'); if (inp) inp.value = '';
+}
+
 function shareLink() {
   if (keywords.length === 0) { setStatus('キーワドがないデス！'); return; }
   if (centerLat === null)    { setStatus('中心点がないデス！'); return; }
@@ -1663,7 +1808,7 @@ function shareLink() {
   params.set('kw', keywords.map(k => `${k.word}:${k.color.replace('#','')}`).join(','));
   params.set('lat', centerLat.toFixed(5));
   params.set('lng', centerLng.toFixed(5));
-  params.set('r', document.getElementById('radius').value);
+  params.set('r', String(Math.round((parseFloat(document.getElementById('radius').value) || 2) * 1000))); // URLはm単位(互換)
   params.set('tile', currentTile);
   params.set('src', dataSource);
 
@@ -1716,7 +1861,7 @@ function restoreFromURL() {
   }
 
   // 半径
-  if (params.has('r')) document.getElementById('radius').value = params.get('r');
+  if (params.has('r')) document.getElementById('radius').value = (parseInt(params.get('r'), 10) || 2000) / 1000; // m→km表示
 
   // 地図タイル
   if (params.has('tile')) {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.9.24</title>
+<title>建物名 地名マップ v2.9.25</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -504,7 +504,7 @@ body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.24</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.25</span>
   <div class="area-settings">
     <button class="btn" id="shareBtn" onclick="shareLink()" style="font-size:11px;padding:5px 12px;">🔗 共有リンク</button>
     <button class="btn" id="captureBtn" onclick="captureMap()" style="font-size:11px;padding:5px 12px;">📷 画像保存</button>
@@ -1173,15 +1173,26 @@ async function fetchAreaData() {
   showLoading(true, `エリアデータ取得中... 半径${(r/1000).toFixed(1)}km`);
   document.getElementById('areaBtn').disabled = true;
 
+  // v2.9.25 軽量化：名前つき"なんでも"をやめ、欲しいカテゴリだけに絞る
+  // （建物・店・施設・駅・バス停・町名＋名木/記念碑/モニュメント/像/噴水/史跡＋名前つき交差点）
+  const A = `(around:${r},${centerLat},${centerLng})`;
   const query = `[out:json][timeout:90][maxsize:134217728];
 (
-  node["name"]["name"!~"^\\s*$"](around:${r},${centerLat},${centerLng});
-  way["name"]["building"](around:${r},${centerLat},${centerLng});
-  way["name"]["amenity"](around:${r},${centerLat},${centerLng});
-  way["name"]["shop"](around:${r},${centerLat},${centerLng});
-  way["name"]["office"](around:${r},${centerLat},${centerLng});
-  way["name"]["leisure"](around:${r},${centerLat},${centerLng});
-  node["place"~"suburb|neighbourhood|quarter|village|hamlet"]["name"](around:${r},${centerLat},${centerLng});
+  nwr["building"]["name"]${A};
+  nwr["shop"]["name"]${A};
+  nwr["office"]["name"]${A};
+  nwr["leisure"]["name"]${A};
+  nwr["amenity"]["name"]${A};
+  nwr["tourism"]["name"]${A};
+  nwr["historic"]["name"]${A};
+  node["natural"]["name"]${A};
+  node["railway"]["name"]${A};
+  node["public_transport"]["name"]${A};
+  node["highway"="bus_stop"]["name"]${A};
+  node["highway"="traffic_signals"]["name"]${A};
+  node["highway"="motorway_junction"]["name"]${A};
+  node["junction"="yes"]["name"]${A};
+  node["place"~"suburb|neighbourhood|quarter|village|hamlet"]["name"]${A};
 );
 out center tags;`;
 
@@ -1240,12 +1251,14 @@ out center tags;`;
           uid: `${el.type}_${el.id}`,
           id: el.id, name: tags.name, lat, lng,
           type: tags.amenity || tags.shop || tags.building ||
-                tags.leisure || tags.office || tags.tourism || tags.railway || tags.highway || '',
+                tags.leisure || tags.office || tags.tourism || tags.historic ||
+                tags.natural || tags.railway || tags.highway || '',
           phone: tags.phone || tags['contact:phone'] || tags['contact:mobile'] || '',
           isBusStop: tags.highway === 'bus_stop' || tags.public_transport === 'stop_point' || tags.public_transport === 'stop_area',
           isStation: tags.railway === 'station' || tags.railway === 'platform' || tags.railway === 'halt' || tags.public_transport === 'station',
           isRoute: tags.route != null || tags.type === 'route' || tags.type === 'route_master',
-          isRoad: tags.highway != null && tags.highway !== 'bus_stop',
+          isRoad: tags.highway != null && tags.highway !== 'bus_stop'
+                  && tags.highway !== 'traffic_signals' && tags.highway !== 'motorway_junction',
           isTown: ['suburb','neighbourhood','quarter','village','hamlet'].includes(tags.place),
         };
       }).filter(Boolean);

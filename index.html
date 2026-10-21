@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.9.16</title>
+<title>建物名 地名マップ v2.9.17</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -482,12 +482,13 @@ body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.16</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.17</span>
   <div class="area-settings">
     <button class="btn" id="shareBtn" onclick="shareLink()" style="font-size:11px;padding:5px 12px;">🔗 共有リンク</button>
     <button class="btn" id="captureBtn" onclick="captureMap()" style="font-size:11px;padding:5px 12px;">📷 画像保存</button>
     <button class="btn" id="maxBtn" onclick="toggleMapMax()" style="font-size:11px;padding:5px 12px;">⛶ 地図ひろげる</button>
     <button class="btn" id="legendBtn" onclick="toggleLegend()" style="font-size:11px;padding:5px 12px;">🏷 凡例</button>
+    <button class="btn" id="kyokuBtn" onclick="toggleKyokuColor()" style="font-size:11px;padding:5px 12px;">☎ 局番カラー</button>
     <button class="btn" onclick="document.getElementById('helpModal').classList.add('on')" style="font-size:13px;padding:4px 10px;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">？</button>
   </div>
 </header>
@@ -1130,6 +1131,7 @@ out center tags;`;
           id: el.id, name: tags.name, lat, lng,
           type: tags.amenity || tags.shop || tags.building ||
                 tags.leisure || tags.office || tags.tourism || tags.railway || tags.highway || '',
+          phone: tags.phone || tags['contact:phone'] || tags['contact:mobile'] || '',
           isBusStop: tags.highway === 'bus_stop' || tags.public_transport === 'stop_point' || tags.public_transport === 'stop_area',
           isStation: tags.railway === 'station' || tags.railway === 'platform' || tags.railway === 'halt' || tags.public_transport === 'station',
           isRoute: tags.route != null || tags.type === 'route' || tags.type === 'route_master',
@@ -1367,6 +1369,40 @@ function isFiltered(b) {
   return false;
 }
 
+// ===== ☎ 局番カラー（プロトタイプ v2.9.17）=====
+let colorMode = 'keyword'; // 'keyword' | 'kyoku'
+// 電話番号 → 市外局番+市内局番（頭6桁）。携帯/フリーダイヤル等は地理的でないので除外。取れなければ''
+function phoneToKyoku(phone) {
+  if (!phone) return '';
+  let p = String(phone).split(';')[0].trim().replace(/^\+81[-\s]?/, '0');
+  let d = p.replace(/\D/g, '');
+  if (d.length < 6 || d[0] !== '0') return '';
+  if (/^(0[789]0|0120|0800|050|0570|0990)/.test(d)) return '';
+  return d.slice(0, 6); // 市外局番+市内局番=先頭6桁（固定）
+}
+// 局番キー → 色（同じ局番は同じ色・無しはグレー）
+function kyokuColor(key) {
+  if (!key) return '#888888';
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return `hsl(${h % 360},70%,55%)`;
+}
+function toggleKyokuColor() {
+  colorMode = (colorMode === 'kyoku') ? 'keyword' : 'kyoku';
+  const btn = document.getElementById('kyokuBtn');
+  if (btn) {
+    btn.classList.toggle('pin-on', colorMode === 'kyoku');
+    btn.innerHTML = (colorMode === 'kyoku') ? '☎ 局番カラーON' : '☎ 局番カラー';
+  }
+  if (colorMode === 'kyoku') {
+    const withPhone = allBuildings.filter(b => phoneToKyoku(b.phone)).length;
+    setStatus(`局番カラーON：電話ありは ${withPhone}/${allBuildings.length}件（無しはグレー）。0件なら一度エリア取得し直してネ`);
+  } else {
+    setStatus('キーワド色にもどしたヨ');
+  }
+  classifyAndRender();
+}
+
 function classifyAndRender() {
   for (const b of allBuildings) b.matched = keywords.filter(kw => b.name.includes(kw.word));
   const visible = allBuildings.filter(b => !isFiltered(b));
@@ -1398,7 +1434,9 @@ function renderMarkers(visible) {
   for (const b of visible) {
     const active = b.matched.filter(kw => kw.enabled);
     if (active.length === 0) continue;
-    const color = active.length===1 ? active[0].color : blendColors(active.map(k=>k.color));
+    const color = (colorMode === 'kyoku')
+      ? kyokuColor(phoneToKyoku(b.phone))
+      : (active.length===1 ? active[0].color : blendColors(active.map(k=>k.color)));
     const m = L.marker([b.lat, b.lng], { icon: makeIcon(color, active.length>1) })
       .bindPopup(`<div style="font-family:'Noto Sans JP',sans-serif;font-size:12px;min-width:150px;">
         <div style="font-weight:700;font-size:14px;margin-bottom:5px;">${b.name}</div>
@@ -1406,6 +1444,7 @@ function renderMarkers(visible) {
           ${active.map(kw=>`<span style="background:${kw.color}22;color:${kw.color};border:1px solid ${kw.color}55;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700;">${kw.word}</span>`).join('')}
         </div>
         ${b.type?`<div style="color:#888;font-size:10px;">${b.type}</div>`:''}
+        ${b.phone?`<div style="color:#66aadd;font-size:10px;">☎ 局番 ${phoneToKyoku(b.phone)||'(地理局番なし)'} <span style="color:#888;">${b.phone}</span></div>`:''}
       </div>`)
       .addTo(markerLayer);
     markerRefs[b.uid] = m;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>建物名 地名マップ v2.9.21</title>
+<title>建物名 地名マップ v2.9.23</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0a0f'/><circle cx='50' cy='42' r='22' fill='none' stroke='%23ff4466' stroke-width='8'/><circle cx='50' cy='42' r='8' fill='%23ff4466'/><line x1='50' y1='64' x2='50' y2='82' stroke='%23ff4466' stroke-width='8' stroke-linecap='round'/><circle cx='28' cy='72' r='5' fill='%230057e7'/><circle cx='72' cy='68' r='5' fill='%2300b86b'/><circle cx='55' cy='80' r='4' fill='%23f5a623'/></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -136,6 +136,8 @@ input[type="text"]:focus, input[type="number"]:focus { border-color: #5566bb; }
 .chip-eye { font-size: 11px; margin-right: 1px; }
 .chip-del { font-size: 10px; opacity: 0.55; margin-left: 2px; cursor: pointer; }
 .chip-del:hover { opacity: 1; }
+.chip { cursor: grab; }
+.chip.dragging { opacity: .45; cursor: grabbing; }
 .add-kw-group { display: flex; gap: 6px; align-items: center; }
 
 /* カラーパレット */
@@ -502,7 +504,7 @@ body.map-maxed .leaflet-top.leaflet-right { margin-top: 46px; }
 
 <header>
   <h1>地名 BUILD MAP</h1>
-  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.21</span>
+  <span style="font-size:10px;color:var(--muted);letter-spacing:1px;margin-left:-10px;">v2.9.23</span>
   <div class="area-settings">
     <button class="btn" id="shareBtn" onclick="shareLink()" style="font-size:11px;padding:5px 12px;">🔗 共有リンク</button>
     <button class="btn" id="captureBtn" onclick="captureMap()" style="font-size:11px;padding:5px 12px;">📷 画像保存</button>
@@ -744,7 +746,7 @@ let centerLat = null, centerLng = null;
 let centerMarker = null;
 
 // ===== MAP =====
-const map = L.map('map', { zoomControl: true }).setView([35.6702, 139.7027], 13);
+const map = L.map('map', { zoomControl: true, zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 120 }).setView([35.6702, 139.7027], 13);
 
 const TILES = {
   osm:      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_2u60_1_1c6203d7be151fa22a37ac5f', { attribution: '© OpenStreetMap © CartoDB', maxZoom: 19 }),
@@ -1069,15 +1071,47 @@ function renderChips() {
     return;
   }
   area.innerHTML = keywords.map(kw => `
-    <div class="chip ${kw.enabled ? '' : 'off'}"
+    <div class="chip ${kw.enabled ? '' : 'off'}" draggable="true" data-id="${kw.id}"
       style="background:${kw.color}1a;color:${kw.color};border-color:${kw.color}${kw.enabled?'99':'33'}"
-      onclick="toggleKw('${kw.id}')">
+      onclick="toggleKw('${kw.id}')"
+      ondragstart="chipDragStart(event,'${kw.id}')" ondragover="chipDragOver(event)"
+      ondrop="chipDrop(event,'${kw.id}')" ondragend="chipDragEnd(event)">
       <span class="chip-eye">${kw.enabled ? '👀' : '🙈'}</span>
       ${kw.word}
       <span class="chip-del" onclick="event.stopPropagation();removeKw('${kw.id}')">✕</span>
     </div>
   `).join('');
   if (legendVisible) renderLegend();
+}
+
+// チップのドラッグ並べ替え（PCのみ。スマホのタッチでは発動しないので影響なし）
+let _dragId = null;
+function chipDragStart(e, id) {
+  _dragId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', id); } catch (_) {}
+  e.currentTarget.classList.add('dragging');
+}
+function chipDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+function chipDrop(e, targetId) {
+  e.preventDefault();
+  if (!_dragId || _dragId === targetId) return;
+  const from = keywords.findIndex(k => k.id === _dragId);
+  if (from < 0 || keywords.findIndex(k => k.id === targetId) < 0) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const after = (e.clientX > rect.left + rect.width / 2); // 右半分に落としたら後ろへ
+  const [moved] = keywords.splice(from, 1);
+  const to = keywords.findIndex(k => k.id === targetId);
+  keywords.splice(after ? to + 1 : to, 0, moved);
+  renderChips();
+  classifyAndRender();
+}
+function chipDragEnd(e) {
+  _dragId = null;
+  document.querySelectorAll('.chip.dragging').forEach(c => c.classList.remove('dragging'));
 }
 
 // ===== DATA SOURCE =====
